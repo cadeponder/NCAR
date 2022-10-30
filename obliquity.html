@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obliquity</title>
+</head>
+<body>
+    <header>
+        <h1>
+            Obliquity
+        </h1>
+    </header>
+    <main>
+        <video loop autoplay style="width: 100%" src="img/obliquity.mp4"></video>
+        <img src="img/obliquity.png" alt="Obliquity interactions">
+        <p>Obliquity gesture interaction to be added later, getting the ideal degree of tilt will replace the "next" button.</p>
+        <button onclick="changePage()">Next</button>
+    </main>
+    <script>
+        const btn = document.querySelector("button");
+        btn.addEventListener("click", changePage);
+        function changePage(){
+            location.replace("procession.html")
+        }
+    </script>
+</body>
+</html>

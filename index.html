@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embodied Ice Age</title>
+</head>
+<body>
+    <header>
+        <H1>Ready to Embody an Ice Age?</H1>
+        <button onclick="changePage()">YES</button>
+        <p>(This button will be replaced with a gesture for moving to the next page.)</p>
+    </header>
+    <main>
+        <img src="/img/earthHead.jpg" alt="Person with the Earth as their head.">
+    </main>
+    <script>
+        const btn = document.querySelector("button");
+        btn.addEventListener("click", changePage);
+        function changePage(){
+            location.replace("obliquity.html")
+        }
+    </script>
+</body>
+</html>
