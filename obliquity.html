@@ -20,14 +20,35 @@
         <img style="width: 100%" src="img/obliquity.gif"></img>
         <img src="img/obliquity.png" alt="Obliquity interactions">
         <p>Obliquity gesture interaction to be added later, getting the ideal degree of tilt will replace the "next" button.</p>
-        <button onclick="changePage()">Next</button>
+
+        <div class="mb10">
+            <button onclick="toggleVideo('o')" id="trackbutton" class="bx--btn bx--btn--secondary" type="button">
+            Toggle Video
+            </button>
+            <div id="updatenote" class="updatenote mt10"> loading model ..</div>
+        </div>
+        <video class="videobox canvasbox" autoplay="autoplay" id="myvideo"></video>
+    
+        <canvas id="canvas" class="border canvasbox"></canvas>
+        </div>
+
+        <button id="next" onclick="changePage()">Next</button>
+
+        <div class="footer">
+            <p class="footer-text">
+                <br/>
+                Hand tracking source: Victor Dibia, HandTrack: A Library For Prototyping Real-time Hand TrackingInterfaces using Convolutional Neural Networks, https://github.com/victordibia/handtracking
+            </p>
+        </div>
     </main>
     <script>
-        const btn = document.querySelector("button");
+        const btn = document.querySelector("#next");
         btn.addEventListener("click", changePage);
         function changePage(){
             location.replace("procession.html")
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/handtrackjs/dist/handtrack.min.js"> </script>
+    <script src="script.js"></script>
 </body>
 </html>
