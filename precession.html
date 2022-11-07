@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procession</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+       <h1>Precession</h1> 
+    </header>
+    <main>
+        <img style="width: 100%" src="img/procession.gif" alt="Procession explanation and gif">
+        <img src="img/procession.png" alt="Procession interaction">
+        <p>Precesssion gesture interaction to be added later, getting the ideal degree of tilt will replace the "next" button. </p> 
+        <button onclick="changePage()">Next</button>       
+    </main>
+    <script>
+        const btn = document.querySelector("button");
+        btn.addEventListener("click", changePage);
+        function changePage(){
+            location.replace("eccentricity.html")
+        }
+    </script>
+</body>
+</html>

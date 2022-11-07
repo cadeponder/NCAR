@@ -29,16 +29,11 @@
     <canvas id="canvas" class="border canvasbox"></canvas>
   </div>
   <button id="next" onclick="changePage()">Next</button> 
-  <div class="footer">
-    <p class="footer-text">
-      <br/>
-      Hand tracking source: Victor Dibia, HandTrack: A Library For Prototyping Real-time Hand TrackingInterfaces using Convolutional Neural Networks, https://github.com/victordibia/handtracking
-    </p>
-  </div>
- 
+ <!-- Interactive -->
   <script src="https://unpkg.com/carbon-components@latest/scripts/carbon-components.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/handtrackjs/dist/handtrack.min.js"> </script>
   <script src="script.js"></script>
+  <!-- Button -->
   <script>
     const btn = document.querySelector("#next");
     btn.addEventListener("click", changePage);

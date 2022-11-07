@@ -6,19 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Embodied Ice Age Intro</title>
     <link rel="stylesheet" href="style.css">
+    <!-- FONT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600&display=swap" rel="stylesheet">
+<!-- JS LIBRARY -->
+<link rel="stylesheet" href="https://unpkg.com/carbon-components@latest/css/carbon-components.css" />
 </head>
-<body background="img/snow.gif">
+<body background="img/snow.gif" class="box--body p20" onload="toggleVideo(!isVideo)">
     <header>
         <H1>Ready to Embody an Ice Age?</H1>
         <button onclick="changePage()">YES</button>
         <p>(This button will be replaced with a gesture for moving to the next page.)</p>
     </header>
     <main>
-        <img src="img/earthHead.jpg" alt="Person with the Earth as their head.">
+        <div class="main">
+            <div class="mb10">
+              <div id="updatenote" class="updatenote mt10"> loading model ..</div>
+            </div>
+            <video class="videobox canvasbox" autoplay="autoplay" id="myvideo"></video>
+        
+            <canvas id="canvas" class="border canvasbox"></canvas>
+          </div>
     </main>
+    <!-- Interaction -->
+    <script src="https://unpkg.com/carbon-components@latest/scripts/carbon-components.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handtrackjs/dist/handtrack.min.js"> </script>
+  <script src="home.js"></script>
+    <!-- BUTTON -->
     <script>
         const btn = document.querySelector("button");
         btn.addEventListener("click", changePage);
