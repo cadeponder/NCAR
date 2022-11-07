@@ -6,9 +6,18 @@ let updateNote = document.getElementById("updatenote");
 
 let isVideo = false;
 let model = null;
+let cycleParam = null;
 
 sunX = null;
 sunY = null;
+
+// constant for which parameter of the M cycle
+// e: eccentricity, p: precession, o: obliquity
+const CycleParams = {
+    e: 'e',
+    p: 'p',
+    o: 'o'
+}
 
 const modelParams = {
     flipHorizontal: true,   // flip e.g for video  
@@ -17,6 +26,10 @@ const modelParams = {
     scoreThreshold: 0.6,    // confidence threshold for predictions.
 }
 
+/**
+ * Starts the webcam video and runs detection
+ * 
+ */
 function startVideo() {
     handTrack.startVideo(video).then(function (status) {
         console.log("video started", status);
@@ -30,7 +43,15 @@ function startVideo() {
     });
 }
 
-function toggleVideo() {
+/**
+ * This function gets called from the toggle video button on the html
+ * passes in a cycleParam to determine with part of the cycle is being viewed
+ * (eccentricity, obliquity, precession)
+ * 
+ * @param {CycleParams} c: e, o or p based on which page
+ */
+function toggleVideo(c) {
+    cycleParam = c;
     if (!isVideo) {
         updateNote.innerText = "Starting video"
         startVideo();
@@ -43,28 +64,73 @@ function toggleVideo() {
 }
 
 
-
+/**
+ * runs detect on the model, giving predictions for what the webcam sees with an array:
+ * # array of predicted matches for faces and hands
+ * predictions: [
+ *   label: 'face' # this can be face, point, closed, open
+ *   # bounding box between 
+ *   bbox: [
+ *     # note: I had a hard time finding docs on exact coords. just got these #s from experimentation
+ *     24, # x coordinate out of ~515
+ *     87, # y coordinate out of ~360
+ *     100, # width
+ *     200 # height
+ *   ],
+ *   class: 5,
+ *   score: "0.98" # how accurate the prediction is
+ * ]
+ * 
+ */
 function runDetection() {
     model.detect(video).then(predictions => {
         console.log("Predictions: ", predictions);
         model.renderPredictions(predictions, canvas, context, video);
 
-        // if face detected, render sun there
-        face = predictions.find(p => p.label == 'face')
-        if (face && face.bbox) {
-          renderSun(face.bbox);
+        // Eccentricity
+        if (cycleParam == CycleParams.e) {
+            renderEccentricity(predictions)
         }
 
-        // if point detected, use that to control ellipse
-        point = predictions.find(p => p.label == 'closed')
-        if (point && point.bbox) {
-          renderOrbit(point.bbox)
+        // Obliquity
+        if (cycleParam == CycleParams.o) {
+            renderObliquity(predictions)
         }
 
         if (isVideo) {
             requestAnimationFrame(runDetection);
         }
     });
+}
+
+/**
+ * Renders the eccentricity interactions
+ * - Sun on face
+ * - Orbit based on pointed finger
+ * 
+ * @param {Array} predictions 
+ */
+function renderEccentricity(predictions) {
+    // if face detected, render sun there
+    face = predictions.find(p => p.label == 'face')
+    if (face && face.bbox) {
+      renderSun(face.bbox);
+    }
+
+    // if point detected, use that to control ellipse
+    point = predictions.find(p => p.label == 'point')
+    if (point && point.bbox) {
+      renderOrbit(point.bbox)
+    }
+}
+
+/**
+ * Renders the obliquity interactions
+ * 
+ * @param {Array} predictions 
+ */
+function renderObliquity(predictions) {
+    console.log('obliquity!')
 }
 
 /**
