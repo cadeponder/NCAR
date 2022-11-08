@@ -130,7 +130,29 @@ function renderEccentricity(predictions) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
-    console.log('obliquity!')
+    // if face detected, render earth there
+    face = predictions.find(p => p.label == 'face')
+    if (face && face.bbox) {
+      renderEarth(face.bbox);
+    }
+}
+
+/**
+ * Draw Earth gif
+ */
+function renderEarth(bbox) {
+    const width = 200;
+    const height = 200;
+    const image = new Image(width, height);
+    image.src = "earth.png";
+
+    earthX = bbox[0];
+    earthY = bbox[1];
+
+    // earth gif
+    image.addEventListener("load", (e) => {
+        context.drawImage(image, earthX, earthY, width, height);
+    });
 }
 
 /**
@@ -155,19 +177,34 @@ function renderSun(bbox) {
  * @param {} bbox 
  */
 function renderOrbit(bbox) {
-  if (sunX && sunY) {
-    // Draw the ellipse
-    context.strokeStyle = "red";
-    context.beginPath();
-    radius = 250 - bbox[0];
-    // never let radius go negative
-    radius = radius > 0 ? radius : 0;
+    x = bbox[0]
+    y = bbox[1]
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
-    // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
-    context.ellipse(sunX, sunY, radius, 100, 0, 0, 2 * Math.PI);
-    context.stroke();
-  }
+    if (sunX && sunY) {
+        // Draw the ellipse
+        context.strokeStyle = "red";
+        context.beginPath();
+        radius = 250 - bbox[0];
+        // never let radius go negative
+        radius = radius > 0 ? radius : 0;
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
+        // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
+        context.ellipse(sunX, sunY, radius, 100, 0, 0, 2 * Math.PI);
+        context.stroke();
+
+        if (calcDistance(sunX, sunY, x, y) < 50) {
+            // this is just to test how we get the transition to happen
+            console.log("you won!")
+        }
+    }
+}
+
+function calcDistance(x1, y1, x2, y2) {
+    const a = x1 - x2;
+    const b = y1 - y2;
+
+    return Math.sqrt( a*a + b*b );
 }
 
 // Load the model.
