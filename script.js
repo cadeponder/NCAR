@@ -11,6 +11,11 @@ let cycleParam = null;
 sunX = null;
 sunY = null;
 
+const earthWidth = 200;
+const earthHeight = 200;
+const earthImage = new Image(earthWidth, earthHeight);
+earthImage.src = "earth.png";
+
 // constant for which parameter of the M cycle
 // e: eccentricity, p: precession, o: obliquity
 const CycleParams = {
@@ -141,18 +146,11 @@ function renderObliquity(predictions) {
  * Draw Earth gif
  */
 function renderEarth(bbox) {
-    const width = 200;
-    const height = 200;
-    const image = new Image(width, height);
-    image.src = "earth.png";
-
     earthX = bbox[0];
     earthY = bbox[1];
 
     // earth gif
-    image.addEventListener("load", (e) => {
-        context.drawImage(image, earthX, earthY, width, height);
-    });
+    context.drawImage(earthImage, earthX, earthY, earthWidth, earthHeight);
 }
 
 /**
