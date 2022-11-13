@@ -137,28 +137,41 @@ function renderEccentricity(predictions) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
-    // if face detected, render earth there
-    face = predictions.find(p => p.label == 'face')
-    if (face && face.bbox) {
-      renderEarth(face.bbox);
-    }
-
     // find all hands
     hands = predictions.filter(p => handLabels.includes(p.label))
+    angle = 0
 
     // for now, assume 2 hands belong to face
     if (hands.length >= 2) {
         // TODO: handle >2 hands
         if (hands[0].bbox && hands[1].bbox) {
-            calculateObliquityAngle(hands[0].bbox, hands[1].bbox)
+            angle = calculateObliquityAngle(hands[0].bbox, hands[1].bbox)
+
         }
     }
+
+    // if face detected, render earth there
+    face = predictions.find(p => p.label == 'face')
+    if (face && face.bbox) {
+        // divide true angle so the rotation of the Earth image isn't so sensitive    
+        renderEarth(face.bbox, angle / 45)
+        renderAngleDisplay(angle)
+    }
+}
+
+/**
+ * Show the user the degrees they are rotating the Earth's axis
+ * 
+ * @param {number} angle 
+ */
+function renderAngleDisplay(angle) {
+    context.fillText("You are tilting Earth's axis by " + angle + "degrees", 10, 50);
 }
 
 /**
  * Get the angle between the hands and draw a line between them
  * 
- * @param {Array} hands - an array of 2 or more hands detected on the screen
+ * @param {Array} hands - an array of 2 or more hand bounding boxes detected on the screen
  */
 function calculateObliquityAngle(hand1, hand2) {
     x1 = hand1[0]
@@ -167,22 +180,42 @@ function calculateObliquityAngle(hand1, hand2) {
     x2 = hand2[0]
     y2 = hand2[1]
 
+    // TODO: Change this so it goes through face? Or Vertical line for earth's axis?
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
     context.beginPath(); // Start a new path
     context.moveTo(x1, y1); // Move the pen to (30, 50)
     context.lineTo(x2, y2); // Draw a line to (150, 100)
     context.stroke(); // Render the path
+
+    // https://gist.github.com/conorbuck/2606166
+    return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
 }
 
 /**
- * Draw Earth gif
+ * Draw Earth image over face
+ * 
+ * TOOD: scale to how big the person's head is
+ * 
+ * @param {Array} bbox - bounding box of the face
+ * @param {number} angle - the rotation of the axis based on the hand position
  */
-function renderEarth(bbox) {
-    earthX = bbox[0];
-    earthY = bbox[1];
+function renderEarth(bbox, angle) {
+    earthCenter = calcBboxCenter(bbox)
+    earthX = earthCenter[0]
+    earthY = earthCenter[1]
 
-    // earth gif
-    context.drawImage(earthImage, earthX, earthY, earthWidth, earthHeight);
+    width = bbox[2]
+    height = width
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+    // translate to center of face
+    context.translate(earthX, earthY)
+    context.rotate(angle)
+
+    // https://stackoverflow.com/questions/4422293/rotate-an-image-around-its-center-in-canvas
+    context.drawImage(earthImage, -width / 2, -height / 2, width, height);
+    // translate back
+    context.translate(-earthX, -earthY)
 }
 
 /**
@@ -191,8 +224,9 @@ function renderEarth(bbox) {
  * @param {} bbox 
  */
 function renderSun(bbox) {
-    sunX = bbox[0] + bbox[2] / 2;
-    sunY = bbox[1] + bbox[3] / 2;
+    sun = calcBboxCenter(bbox)
+    sunX = sun[0]
+    sunY = sun[1]
 
     // sun on face
     context.fillStyle = "yellow";
@@ -235,6 +269,18 @@ function calcDistance(x1, y1, x2, y2) {
     const b = y1 - y2;
 
     return Math.sqrt( a*a + b*b );
+}
+
+/**
+ * Takes a bbox with [x, y, width, height]
+ * and return an array representing the center of this box
+ * [cx, cy]
+ * 
+ * @param {Array} bbox
+ * @returns 
+ */
+function calcBboxCenter(bbox) {
+    return [bbox[0] + bbox[2] / 2, bbox[1] + bbox[3] / 2]
 }
 
 // Load the model.

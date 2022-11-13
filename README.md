@@ -6,7 +6,8 @@
 - [ ] Make webcam access persist across all pages
     * will need to set cycle param in a different location than current toggleVideo()
 - [ ] Obliquity interaction
+    * Modify angle display so it maps to the actual axis tilt needed for ice age
 - [ ] Eccentricity interaction
-    * modify so that orbit is off center of sun
+    * Modify so that orbit is off center of sun
 - [ ] Precession interaction
     * experiment with using a pole for this one?
