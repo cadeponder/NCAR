@@ -16,6 +16,8 @@ const earthHeight = 200;
 const earthImage = new Image(earthWidth, earthHeight);
 earthImage.src = "earth.png";
 
+handLabels = ['point', 'closed', 'open']
+
 // constant for which parameter of the M cycle
 // e: eccentricity, p: precession, o: obliquity
 const CycleParams = {
@@ -140,6 +142,36 @@ function renderObliquity(predictions) {
     if (face && face.bbox) {
       renderEarth(face.bbox);
     }
+
+    // find all hands
+    hands = predictions.filter(p => handLabels.includes(p.label))
+
+    // for now, assume 2 hands belong to face
+    if (hands.length >= 2) {
+        // TODO: handle >2 hands
+        if (hands[0].bbox && hands[1].bbox) {
+            calculateObliquityAngle(hands[0].bbox, hands[1].bbox)
+        }
+    }
+}
+
+/**
+ * Get the angle between the hands and draw a line between them
+ * 
+ * @param {Array} hands - an array of 2 or more hands detected on the screen
+ */
+function calculateObliquityAngle(hand1, hand2) {
+    x1 = hand1[0]
+    y1 = hand1[1]
+
+    x2 = hand2[0]
+    y2 = hand2[1]
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
+    context.beginPath(); // Start a new path
+    context.moveTo(x1, y1); // Move the pen to (30, 50)
+    context.lineTo(x2, y2); // Draw a line to (150, 100)
+    context.stroke(); // Render the path
 }
 
 /**
