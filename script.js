@@ -18,7 +18,8 @@ const earthHeight = earthWidth * heightScale;
 const earthImage = new Image(earthWidth, earthHeight);
 earthImage.src = "earth_with_axis.png";
 
-globalObliquityAngle = 0
+let globalObliquityAngle = 0
+const angleMax = .75
 
 handLabels = ['point', 'closed', 'open', 'pinch']
 
@@ -179,8 +180,10 @@ function renderObliquity(predictions) {
  */
 function renderSunAcrossEarth(bbox) {
     // render sun rays
-    context.fillStyle = 'yellow'
+    context.fillStyle = 'yellow';
+    context.beginPath()
     context.arc(600, calcBboxCenter(bbox)[1], 50, 0, 2 * Math.PI);
+    context.closePath()
     context.fill()
 }
 
@@ -190,7 +193,7 @@ function renderSunAcrossEarth(bbox) {
  * @param {number} angle 
  */
 function renderAngleDisplay(angle) {
-    context.fillStyle = 'white'
+    context.fillStyle = 'white';
     context.fillText("You are tilting Earth's axis by " + angle + "degrees", 10, 50);
 }
 
@@ -231,8 +234,8 @@ function calculateObliquityAngle(hand1, hand2) {
     adjustedAngle = Math.abs(actualAngle / 30)
 
     // constrain angle so Earth doesn't flip :P
-    if (adjustedAngle > .75) {
-        return .75
+    if (adjustedAngle > angleMax) {
+        return angleMax
     } else {
         return adjustedAngle
     }
@@ -254,18 +257,36 @@ function renderEarth(bbox, angle) {
     width = bbox[2]
     height = width * heightScale
 
+
+    //      translate to center of face
+
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
-    // translate to center of face
     context.translate(earthX, earthY)
     context.rotate(angle)
 
+    //      Draw Earth image on face
+
     // https://stackoverflow.com/questions/4422293/rotate-an-image-around-its-center-in-canvas
     context.drawImage(earthImage, -width / 2, -height / 2, width, height);
-    
+
+    //      Make the "ice cap"
+
+    // calculate how far the ice should be going...
+    // lower angle = more ice
+    iceStart = calculateRadians(angle, 1 * Math.PI, 1.49 * Math.PI)
+    iceEnd = calculateRadians(angle, 1.51 * Math.PI, 1.99 * Math.PI, true)
+
+    // image here is helpful for arc: https://www.w3resource.com/html5-canvas/html5-canvas-arc.php
+    context.fillStyle = "white";
+    context.strokeStyle = "white";
+    context.beginPath();
+    context.arc(0, 0, width / 2, iceStart, iceEnd)
+    context.closePath()
+    context.fill()
+
     // translate back
     context.rotate(-angle)
     context.translate(-earthX, -earthY)
-    
 }
 
 /**
@@ -288,6 +309,7 @@ function renderSun(bbox) {
     context.fillStyle = "yellow";
     context.beginPath();
     context.arc(sunX, sunY, 50, 0, 2 * Math.PI);
+    context.closePath()
     context.fill();
 }
 
@@ -343,6 +365,28 @@ function calcDistance(x1, y1, x2, y2) {
  */
 function calcBboxCenter(bbox) {
     return [bbox[0] + bbox[2] / 2, bbox[1] + bbox[3] / 2]
+}
+
+/**
+ * Helps scale the angle that is set for obliquity to the radians 
+ * needed to make the ice cap
+ * 
+ * https://stackoverflow.com/questions/14224535/scaling-between-two-number-ranges
+ * https://www.w3resource.com/html5-canvas/html5-canvas-arc.php 
+ * 
+ * @param {number} scaleFactor - determines the scale 
+ * @param {number} min
+ * @param {number} max
+ * @param {flip} (optional) - negate the value
+ * @returns 
+ */
+function calculateRadians(scaleFactor, min, max, flip=false) {
+    percent = scaleFactor / angleMax
+    if (flip) {
+        return max - percent * (max - min)
+    }
+
+    return percent * (max - min) + min;
 }
 
 // Load the model.
