@@ -244,12 +244,11 @@ function calculateObliquityAngle(hand1, hand2) {
 /**
  * Draw Earth image over face
  * 
- * TOOD: scale to how big the person's head is
- * 
  * @param {Array} bbox - bounding box of the face
  * @param {number} angle - the rotation of the axis based on the hand position
+ * @param {number} scalePercent - percentge to scale the ice cap by
  */
-function renderEarth(bbox, angle) {
+function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
     earthCenter = calcBboxCenter(bbox)
     earthX = earthCenter[0]
     earthY = earthCenter[1]
@@ -273,8 +272,8 @@ function renderEarth(bbox, angle) {
 
     // calculate how far the ice should be going...
     // lower angle = more ice
-    iceStart = calculateRadians(angle, 1 * Math.PI, 1.49 * Math.PI)
-    iceEnd = calculateRadians(angle, 1.51 * Math.PI, 1.99 * Math.PI, true)
+    iceStart = calculateRadians(scalePercent, 1 * Math.PI, 1.49 * Math.PI)
+    iceEnd = calculateRadians(scalePercent, 1.51 * Math.PI, 1.99 * Math.PI, true)
 
     // image here is helpful for arc: https://www.w3resource.com/html5-canvas/html5-canvas-arc.php
     context.fillStyle = "white";
@@ -374,14 +373,13 @@ function calcBboxCenter(bbox) {
  * https://stackoverflow.com/questions/14224535/scaling-between-two-number-ranges
  * https://www.w3resource.com/html5-canvas/html5-canvas-arc.php 
  * 
- * @param {number} scaleFactor - determines the scale 
+ * @param {number} percent - percentage to scale by
  * @param {number} min
  * @param {number} max
  * @param {flip} (optional) - negate the value
  * @returns 
  */
-function calculateRadians(scaleFactor, min, max, flip=false) {
-    percent = scaleFactor / angleMax
+function calculateRadians(percent, min, max, flip=false) {
     if (flip) {
         return max - percent * (max - min)
     }
