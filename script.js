@@ -11,10 +11,12 @@ let cycleParam = null;
 sunX = null;
 sunY = null;
 
+// png is not perfect square; scale the height
+heightScale = 1.44
 const earthWidth = 200;
-const earthHeight = 200;
+const earthHeight = earthWidth * heightScale;
 const earthImage = new Image(earthWidth, earthHeight);
-earthImage.src = "earth.png";
+earthImage.src = "earth_with_axis.png";
 
 globalObliquityAngle = 0
 
@@ -250,7 +252,7 @@ function renderEarth(bbox, angle) {
     earthY = earthCenter[1]
 
     width = bbox[2]
-    height = width
+    height = width * heightScale
 
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
     // translate to center of face
