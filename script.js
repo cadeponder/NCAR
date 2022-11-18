@@ -33,9 +33,11 @@ const CycleParams = {
 
 const modelParams = {
     flipHorizontal: true,   // flip e.g for video  
-    maxNumBoxes: 20,        // maximum number of boxes to detect
+    maxNumBoxes: 5,        // maximum number of boxes to detect
     iouThreshold: 0.5,      // ioU threshold for non-max suppression
     scoreThreshold: 0.6,    // confidence threshold for predictions.
+    bboxLineWidth: "0.01",  // get rid of bounding boxes drawn on video
+    fontSize: 0
 }
 
 /**
@@ -117,7 +119,7 @@ function runDetection() {
 /**
  * Renders the eccentricity interactions
  * - Sun on face
- * - Orbit based on pointed finger
+ * - Orbit & earth based on LEFT hand
  * 
  * @param {Array} predictions 
  */
@@ -204,6 +206,9 @@ function renderAngleDisplay(angle) {
  * @param {Array} hands - an array of 2 or more hand bounding boxes detected on the screen
  */
 function calculateObliquityAngle(hand1, hand2) {
+    hand1 = calcBboxCenter(hand1)
+    hand2 = calcBboxCenter(hand2)
+
     x1 = hand1[0]
     y1 = hand1[1]
 
@@ -223,10 +228,12 @@ function calculateObliquityAngle(hand1, hand2) {
     // TODO: Change this so it goes through face? Or Vertical line for earth's axis?
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
     context.beginPath();
+    context.lineWidth = 2;
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.stroke();
     context.closePath()
+    context.lineWidth = 0;
 
     // https://gist.github.com/conorbuck/2606166
     actualAngle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
@@ -278,7 +285,6 @@ function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
 
     // image here is helpful for arc: https://www.w3resource.com/html5-canvas/html5-canvas-arc.php
     context.fillStyle = "white";
-    context.strokeStyle = "white";
     context.beginPath();
     context.arc(0, 0, width / 2, iceStart, iceEnd)
     context.closePath()
@@ -326,7 +332,10 @@ function renderOrbit(bbox) {
     if (sunX && sunY) {
         // Draw the ellipse
         context.strokeStyle = "red";
+        context.lineWidth = 1;
         context.beginPath();
+
+        // TODO: Scale 250 distance so that it works better when person is further away
         radius = 250 - bbox[0];
 
         // never let radius go negative
@@ -337,6 +346,7 @@ function renderOrbit(bbox) {
         context.ellipse(sunX - 50, sunY, radius, 100, 0, 0, 2 * Math.PI);
         context.stroke();
         context.closePath()
+        context.lineWidth = 0;
 
 
         //    Make the ice melt based on how far earth is from sun
