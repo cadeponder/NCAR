@@ -129,9 +129,10 @@ function renderEccentricity(predictions) {
     }
 
     // if point detected, use that to control ellipse
-    point = predictions.find(p => p.label == 'point')
-    if (point && point.bbox) {
-      renderOrbit(point.bbox)
+    hands = predictions.filter(p => handLabels.includes(p.label))
+
+    if (hands.length > 0 && hands[0].bbox) {
+      renderOrbit(hands[0].bbox)
     }
 }
 
@@ -313,7 +314,7 @@ function renderSun(bbox) {
 }
 
 /**
- * Draw an orbit based on the pointed finger position
+ * Draw an orbit based on the LEFT hand position
  * 
  * @param {} bbox 
  */
@@ -321,18 +322,29 @@ function renderOrbit(bbox) {
     x = bbox[0]
     y = bbox[1]
 
+    // if sun face exists
     if (sunX && sunY) {
         // Draw the ellipse
         context.strokeStyle = "red";
         context.beginPath();
         radius = 250 - bbox[0];
+
         // never let radius go negative
         radius = radius > 0 ? radius : 0;
 
         // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
         // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
-        context.ellipse(sunX, sunY, radius, 100, 0, 0, 2 * Math.PI);
+        context.ellipse(sunX - 50, sunY, radius, 100, 0, 0, 2 * Math.PI);
         context.stroke();
+        context.closePath()
+
+
+        //    Make the ice melt based on how far earth is from sun
+
+        distSunToEarth = calcDistance(sunX, sunY, x, y)
+        //todo: check numbers... what is maximum?
+        percentScale = (500 - distSunToEarth) / 500
+        renderEarth(bbox, .2, percentScale)
 
         if (calcDistance(sunX, sunY, x, y) < 50) {
             // this is just to test how we get the transition to happen
