@@ -16,7 +16,9 @@ const earthHeight = 200;
 const earthImage = new Image(earthWidth, earthHeight);
 earthImage.src = "earth.png";
 
-handLabels = ['point', 'closed', 'open']
+globalObliquityAngle = 0
+
+handLabels = ['point', 'closed', 'open', 'pinch']
 
 // constant for which parameter of the M cycle
 // e: eccentricity, p: precession, o: obliquity
@@ -35,7 +37,6 @@ const modelParams = {
 
 /**
  * Starts the webcam video and runs detection
- * 
  */
 function startVideo() {
     handTrack.startVideo(video).then(function (status) {
@@ -132,6 +133,12 @@ function renderEccentricity(predictions) {
 }
 
 /**
+ * 
+ *      OBLIQUITY FUNCTIONS
+ * 
+ */
+
+/**
  * Renders the obliquity interactions
  * 
  * @param {Array} predictions 
@@ -139,24 +146,40 @@ function renderEccentricity(predictions) {
 function renderObliquity(predictions) {
     // find all hands
     hands = predictions.filter(p => handLabels.includes(p.label))
+    face = predictions.find(p => p.label == 'face')
+
     angle = 0
 
-    // for now, assume 2 hands belong to face
+    context.save()
+
     if (hands.length >= 2) {
         // TODO: handle >2 hands
         if (hands[0].bbox && hands[1].bbox) {
-            angle = calculateObliquityAngle(hands[0].bbox, hands[1].bbox)
-
+            globalObliquityAngle = calculateObliquityAngle(hands[0].bbox, hands[1].bbox)
         }
     }
 
     // if face detected, render earth there
-    face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
-        // divide true angle so the rotation of the Earth image isn't so sensitive    
-        renderEarth(face.bbox, angle / 45)
-        renderAngleDisplay(angle)
+        renderEarth(face.bbox, globalObliquityAngle)
+
+        renderSunAcrossEarth(face.bbox)
+        context.restore()
+
+        renderAngleDisplay(globalObliquityAngle)
     }
+}
+
+/**
+ * Draw the sun on the same y-position as the Earth positioned over visitor's face
+ * 
+ * @param {Array} bbox 
+ */
+function renderSunAcrossEarth(bbox) {
+    // render sun rays
+    context.fillStyle = 'yellow'
+    context.arc(600, calcBboxCenter(bbox)[1], 50, 0, 2 * Math.PI);
+    context.fill()
 }
 
 /**
@@ -165,6 +188,7 @@ function renderObliquity(predictions) {
  * @param {number} angle 
  */
 function renderAngleDisplay(angle) {
+    context.fillStyle = 'white'
     context.fillText("You are tilting Earth's axis by " + angle + "degrees", 10, 50);
 }
 
@@ -180,15 +204,36 @@ function calculateObliquityAngle(hand1, hand2) {
     x2 = hand2[0]
     y2 = hand2[1]
 
+    // check if hands need to be swapped (if hand1 was on the right)
+    if (x1 > x2) {
+        x1 = x2
+        y1 = y2
+
+        x2 = hand1[0]
+        y2 = hand1[1]
+    }
+
+    // Draw line between two hands
     // TODO: Change this so it goes through face? Or Vertical line for earth's axis?
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
-    context.beginPath(); // Start a new path
-    context.moveTo(x1, y1); // Move the pen to (30, 50)
-    context.lineTo(x2, y2); // Draw a line to (150, 100)
-    context.stroke(); // Render the path
+    context.beginPath();
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+    context.closePath()
 
     // https://gist.github.com/conorbuck/2606166
-    return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    actualAngle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+    // divide true angle so the rotation of the Earth image isn't so sensitive    
+    adjustedAngle = Math.abs(actualAngle / 30)
+
+    // constrain angle so Earth doesn't flip :P
+    if (adjustedAngle > .75) {
+        return .75
+    } else {
+        return adjustedAngle
+    }
 }
 
 /**
@@ -214,9 +259,18 @@ function renderEarth(bbox, angle) {
 
     // https://stackoverflow.com/questions/4422293/rotate-an-image-around-its-center-in-canvas
     context.drawImage(earthImage, -width / 2, -height / 2, width, height);
+    
     // translate back
+    context.rotate(-angle)
     context.translate(-earthX, -earthY)
+    
 }
+
+/**
+ * 
+ *      ECCENTRICITY FUNCTIONS
+ * 
+ */
 
 /**
  * Draw a yellow circle of the face detected
@@ -263,6 +317,12 @@ function renderOrbit(bbox) {
         }
     }
 }
+
+/**
+ * 
+ *      HELPER FUNCTIONS
+ * 
+ */
 
 function calcDistance(x1, y1, x2, y2) {
     const a = x1 - x2;
