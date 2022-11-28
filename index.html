@@ -9,26 +9,34 @@
     <!-- FONT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600&visibility=swap" rel="stylesheet">
 <!-- JS LIBRARY -->
 <link rel="stylesheet" href="https://unpkg.com/carbon-components@latest/css/carbon-components.css" />
 </head>
 <body background="img/snow.gif" class="box--body p20" onload="toggleVideo(!isVideo)">
-    <header>
-        <H1>Ready to Embody an Ice Age?</H1>
-        <button onclick="changePage()">YES</button>
-        <p>(This button will be replaced with a gesture for moving to the next page.)</p>
-    </header>
-    <main>
-        <div class="main">
-            <div class="mb10">
-              <div id="updatenote" class="updatenote mt10"> loading model ..</div>
-            </div>
-            <video class="videobox canvasbox" autoplay="autoplay" id="myvideo"></video>
+    <div class="grid-container">
+      <div id="feedback"><p>(feedback from past progress here)</p></div>
+
+      <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
+        <!-- get rid of button when movement based 'yes' made -->
+        <button onclick="changePage()">YES</button></div>
         
-            <canvas id="canvas" class="border canvasbox"></canvas>
+      <div id="edMedia"><img id="img" src="" alt=""></div>  
+      <div id="edText">(Educational Text)</div>
+
+      <div id="interaction">
+        <div class="main">
+          <div class="mb10">
+            <div id="updatenote" class="updatenote mt10"> loading model ..</div>
           </div>
-    </main>
+          <video class="videobox canvasbox" autoplay="autoplay" id="myvideo"></video>
+      
+          <canvas id="canvas" class="border canvasbox"></canvas>
+        </div>
+      </div>
+
+      <!-- <div id="progress">(Interaction Progress Bar)</div> -->
+    </div> 
     <!-- Interaction -->
     <script src="carbon-components.js"></script>
   <script src="handtrack.js"></script>
@@ -40,11 +48,46 @@
   </script> -->
     <!-- BUTTON -->
     <script>
+        const header = document.getElementById('headerTxt');
+        const edMedia = document.getElementById('edMedia')
+        const img = document.getElementById('img'); 
+        const feedback = document.getElementById('feedback'); 
+        // const progressBar = document.getElementById('progress'); 
         const btn = document.querySelector("button");
+        const normalGrid = document.getElementsByClassName('grid-container');
+        const homeGrid = document.getElementsByClassName('grid-container-home');
         btn.addEventListener("click", changePage);
+
+        if (header.
+            textContent = "Ready to Embody an Ice Age?") {
+              feedback.style.visibility = 'hidden';
+              edMedia.style.visibility = 'hidden';
+              // progressBar.style.visibility = 'hidden';
+              normalGrid[0].className = 'grid-container-home';
+            }
+           
+
         function changePage(){
-            location.replace("obliquity.html")
+            // location.replace("obliquity.html")
+      // FOR SWITCHING FROM INDEX
+            homeGrid[0].className = 'grid-container';
+            if (header.
+            textContent = "Ready to Embody an Ice Age?"){
+              header.textContent = 'Obliquity';
+              img.src = 'img/obliquity.gif';
+              // unhides extra content hidden on index
+              feedback.style.visibility = 'visible';
+              edMedia.style.visibility = 'visible';
+              // progressBar.style.visibility = 'visible';
+            }
+          console.log("clicked");
         }
+
+        // function pageContent () {
+        //   const feedback = document.getElementsByClassName(feedbback);
+        //   const headerText = document.getElementsByClassName(header);
+        //   const edMedia = document.getElementsByClassName(edMedia);
+        // }
     </script>
 </body>
 </html>
