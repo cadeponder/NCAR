@@ -63,8 +63,7 @@ function startVideo() {
  * 
  * @param {CycleParams} c: e, o or p based on which page
  */
-function toggleVideo(c) {
-    cycleParam = c;
+function toggleVideo() {
     if (!isVideo) {
         updateNote.innerText = "Starting video"
         startVideo();
@@ -76,6 +75,18 @@ function toggleVideo(c) {
     }
 }
 
+/**
+ * Controls which interaction is used
+ * 
+ * @param {CycleParams} c : 
+ * e: 'e',
+ * p: 'p',
+ * o: 'o'
+ * 
+ */
+function setCycle(c) {
+    cycleParam = c
+}
 
 /**
  * runs detect on the model, giving predictions for what the webcam sees with an array:
