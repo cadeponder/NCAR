@@ -1,3 +1,4 @@
+<!-- ADD RESTART FUNCTIONALITY -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +20,7 @@
 
       <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
         <!-- get rid of button when movement based 'yes' made -->
-        <button onclick="changePage()">YES</button></div>
+        <button>YES</button></div>
         
       <div id="edMedia"><img id="img" src="" alt=""></div>  
       <div id="edText">(Educational Text)</div>
@@ -54,31 +55,55 @@
         const feedback = document.getElementById('feedback'); 
         // const progressBar = document.getElementById('progress'); 
         const btn = document.querySelector("button");
-        const normalGrid = document.getElementsByClassName('grid-container');
-        const homeGrid = document.getElementsByClassName('grid-container-home');
+        const pageGrid = document.getElementsByClassName('grid-container-home');
         btn.addEventListener("click", changePage);
 
         if (header.
             textContent = "Ready to Embody an Ice Age?") {
               feedback.style.visibility = 'hidden';
               edMedia.style.visibility = 'hidden';
-              normalGrid[0].className = 'grid-container-home';
+              // normalGrid[0].className = 'grid-container-home';
             }
            
 
         function changePage(){
             // location.replace("obliquity.html")
-      // FOR SWITCHING FROM INDEX
-            homeGrid[0].className = 'grid-container';
+      // FOR SWITCHING FROM INDEX   
+         
             if (header.
-            textContent = "Ready to Embody an Ice Age?"){
+            textContent == "Ready to Embody an Ice Age?"){
+              header.textContent = 'Eccentricity';
+              img.src = 'img/eccentricity.gif';
+              // pageGrid[0].className = 'grid-container';
+              edMedia.style.visibility = 'visible';
+              console.log("home->eccentricity");
+              console.log(header);
+              // unhides extra content hidden on index
+            }
+           else if (header.
+            textContent == 'Eccentricity'){
+              header.textContent = 'Precession';
+              img.src = 'img/procession.gif';
+              console.log("eccentricity->precession");
+              feedback.style.visibility = 'visible';
+
+              // unhides extra content hidden on index
+            }
+            else if (header.
+            textContent == 'Precession'){
               header.textContent = 'Obliquity';
               img.src = 'img/obliquity.gif';
+              console.log("precession->obliquity");
               // unhides extra content hidden on index
-              feedback.style.visibility = 'visible';
-              edMedia.style.visibility = 'visible';
             }
-          console.log("clicked");
+            else if (header.
+            textContent == 'Obliquity'){
+              header.textContent = "Congratulations, You've Created an Ice Age!";
+              img.src = '';
+              console.log("final page");
+              // unhides extra content hidden on index
+            }
+           
         }
 
         // function pageContent () {
