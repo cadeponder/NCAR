@@ -1,7 +1,6 @@
 const video = document.getElementById("myvideo");
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
-let trackButton = document.getElementById("trackbutton");
 
 let isVideo = false;
 let model = null;
@@ -104,9 +103,9 @@ function runDetection() {
         console.log("Predictions: ", predictions);
         model.renderPredictions(predictions, canvas, context, video);
 
-        // Eccentricity
-        if (cycleParam == CycleParams.e) {
-            renderEccentricity(predictions)
+        // Eccentricity or Precession render orbit controls
+        if (cycleParam == CycleParams.e || cycleParam == CycleParams.p) {
+            renderOrbitInteraction(predictions, cycleParam)
         }
 
         // Obliquity
@@ -120,26 +119,121 @@ function runDetection() {
     });
 }
 
+
 /**
- * Renders the eccentricity interactions
+ *      ECCENTRICITY 
+ *          & 
+ *      PRECESSION 
+ *      FUNCTIONS
+ */
+
+/**
+ * Renders orbit interactions
  * - Sun on face
  * - Orbit & earth based on LEFT hand
  * 
  * @param {Array} predictions 
+ * @param {CycleParam} c (can be 'e' or 'p')
  */
-function renderEccentricity(predictions) {
+function renderOrbitInteraction(predictions, c) {
     renderHelperText("Eccentricity")
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
-      renderSun(face.bbox);
+        renderSun(face.bbox);
     }
 
     // if point detected, use that to control ellipse
     hands = predictions.filter(p => handLabels.includes(p.label))
 
-    if (hands.length > 0 && hands[0].bbox) {
-      renderOrbit(hands[0].bbox)
+    if (hands.length > 0 && hands[0].bbox || c == CycleParams.p) {
+        bboxParam = [0,0,0,0]
+        if (hands.length > 0) {
+            bboxParam = hands[0].bbox
+        }
+        renderOrbit(bboxParam, c)
+    }
+}
+
+/**
+ * Draw a yellow circle of the face detected
+ * 
+ * @param {} bbox 
+ */
+ function renderSun(bbox) {
+    sun = calcBboxCenter(bbox)
+    sunX = sun[0]
+    sunY = sun[1]
+
+    // sun on face
+    context.fillStyle = "yellow";
+    context.beginPath();
+    context.arc(sunX, sunY, 50, 0, 2 * Math.PI);
+    context.closePath()
+    context.fill();
+}
+
+/**
+ * Draw an orbit based on the LEFT hand position
+ * 
+ * @param {} bbox 
+ * @param {CycleParam} c - can be 'e' or 'p'
+ */
+function renderOrbit(bbox, c) {
+    x = bbox[0]
+    y = bbox[1]
+    isEccentricity = c == CycleParams.e
+    xRadius = 300
+    yRadius = 100
+
+    // if sun face exists
+    if (sunX && sunY) {
+
+        // if eccentricity, change ellipse width based on bbox x coordinate
+        // TODO: Scale 250 distance so that it works better when person is further away
+        // also ellipse x below probably needs to be updated
+        if (isEccentricity) {
+            xRadius = 250 - bbox[0];
+            // never let xRadius go negative
+            xRadius = xRadius > 0 ? xRadius : 0;
+        }
+
+        centerX = sunX - 50
+        centerY = sunY
+
+        // Draw the ellipse
+        context.strokeStyle = "red";
+        context.lineWidth = 1;
+        context.beginPath();
+        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
+        // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
+        context.ellipse(centerX, centerY, xRadius, yRadius, 0, 0, 2 * Math.PI);
+        context.stroke();
+        context.closePath()
+        context.lineWidth = 0;
+
+        // Calculate distance between hand and face
+        // For eccentricity, this will make the ice melt based on how far earth is from sun
+        // For precession, we will use this to move earth along the orbital path
+        distSunToEarth = calcDistance(sunX, sunY, x, y)
+        //todo: check numbers... what is maximum?
+        percentScale = (500 - distSunToEarth) / 500
+
+        // ECCENTRICITY: hand stretches orbit width
+        if (isEccentricity) {
+            renderEarth(bbox, .2, percentScale)
+        } else {
+            // PRECESSION: hand moves NH summer location on orbit
+            // normalize distance to 0-180 (corresponds to position on ellipse)
+            positionOnEllipse = calculateRadians(percentScale, 0, 180)
+
+            // adjust bbox so that x, y of Earth moves across orbit
+            // based on left hand position
+            // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
+            bbox[0] = centerX + xRadius * Math.cos(positionOnEllipse)
+            bbox[1] = centerY + yRadius * Math.sin(positionOnEllipse)
+            renderEarth(bbox, .2, percentScale)
+        }
     }
 }
 
@@ -255,7 +349,7 @@ function calculateObliquityAngle(hand1, hand2) {
 }
 
 /**
- * Draw Earth image over face
+ * Draw Earth image over bbox
  * 
  * @param {Array} bbox - bounding box of the face
  * @param {number} angle - the rotation of the axis based on the hand position
@@ -269,14 +363,13 @@ function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
     width = bbox[2]
     height = width * heightScale
 
-
-    //      translate to center of face
+    //      translate to center of bbox
 
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
     context.translate(earthX, earthY)
     context.rotate(angle)
 
-    //      Draw Earth image on face
+    //      Draw Earth image on bbox
 
     // https://stackoverflow.com/questions/4422293/rotate-an-image-around-its-center-in-canvas
     context.drawImage(earthImage, -width / 2, -height / 2, width, height);
@@ -298,74 +391,6 @@ function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
     // translate back
     context.rotate(-angle)
     context.translate(-earthX, -earthY)
-}
-
-/**
- * 
- *      ECCENTRICITY FUNCTIONS
- * 
- */
-
-/**
- * Draw a yellow circle of the face detected
- * 
- * @param {} bbox 
- */
-function renderSun(bbox) {
-    sun = calcBboxCenter(bbox)
-    sunX = sun[0]
-    sunY = sun[1]
-
-    // sun on face
-    context.fillStyle = "yellow";
-    context.beginPath();
-    context.arc(sunX, sunY, 50, 0, 2 * Math.PI);
-    context.closePath()
-    context.fill();
-}
-
-/**
- * Draw an orbit based on the LEFT hand position
- * 
- * @param {} bbox 
- */
-function renderOrbit(bbox) {
-    x = bbox[0]
-    y = bbox[1]
-
-    // if sun face exists
-    if (sunX && sunY) {
-        // Draw the ellipse
-        context.strokeStyle = "red";
-        context.lineWidth = 1;
-        context.beginPath();
-
-        // TODO: Scale 250 distance so that it works better when person is further away
-        radius = 250 - bbox[0];
-
-        // never let radius go negative
-        radius = radius > 0 ? radius : 0;
-
-        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
-        // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
-        context.ellipse(sunX - 50, sunY, radius, 100, 0, 0, 2 * Math.PI);
-        context.stroke();
-        context.closePath()
-        context.lineWidth = 0;
-
-
-        //    Make the ice melt based on how far earth is from sun
-
-        distSunToEarth = calcDistance(sunX, sunY, x, y)
-        //todo: check numbers... what is maximum?
-        percentScale = (500 - distSunToEarth) / 500
-        renderEarth(bbox, .2, percentScale)
-
-        if (calcDistance(sunX, sunY, x, y) < 50) {
-            // this is just to test how we get the transition to happen
-            console.log("you won!")
-        }
-    }
 }
 
 /**
@@ -428,5 +453,4 @@ function renderHelperText(text) {
 handTrack.load(modelParams).then(lmodel => {
     // detect objects in the image.
     model = lmodel
-    trackButton.disabled = false
 });
