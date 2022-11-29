@@ -427,12 +427,8 @@ function calculateRadians(percent, min, max, flip=false) {
  * @param {String} text 
  */
 function renderHelperText(text) {
-    context.fillStyle = "white";
-    context.rect(0, canvas.height - 50, canvas.width, 100)
-    context.font = '48px serif';
-
-    context.fillStyle = 'black';
-    context.fillText(text, 100, 100);
+    helperElement = document.getElementById('helper-text')
+    helperElement.text(text)
 }
 
 // Load the model.
