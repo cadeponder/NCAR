@@ -221,6 +221,8 @@ function renderOrbit(bbox, c) {
 
         // ECCENTRICITY: hand stretches orbit width
         if (isEccentricity) {
+            // change y so that the Earth stays on the orbit
+            bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
             renderEarth(bbox, .2, percentScale)
         } else {
             // PRECESSION: hand moves NH summer location on orbit
@@ -351,7 +353,7 @@ function calculateObliquityAngle(hand1, hand2) {
 /**
  * Draw Earth image over bbox
  * 
- * @param {Array} bbox - bounding box of the face
+ * @param {Array} bbox - bounding box: [x, y, width, height]
  * @param {number} angle - the rotation of the axis based on the hand position
  * @param {number} scalePercent - percentge to scale the ice cap by
  */
