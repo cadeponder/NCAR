@@ -63,8 +63,7 @@ function startVideo() {
  * 
  * @param {CycleParams} c: e, o or p based on which page
  */
-function toggleVideo(c) {
-    cycleParam = c;
+function toggleVideo() {
     if (!isVideo) {
         updateNote.innerText = "Starting video"
         startVideo();
@@ -76,6 +75,18 @@ function toggleVideo(c) {
     }
 }
 
+/**
+ * Controls which interaction is used
+ * 
+ * @param {CycleParams} c : 
+ * e: 'e',
+ * p: 'p',
+ * o: 'o'
+ * 
+ */
+function setCycle(c) {
+    cycleParam = c
+}
 
 /**
  * runs detect on the model, giving predictions for what the webcam sees with an array:
@@ -124,6 +135,7 @@ function runDetection() {
  * @param {Array} predictions 
  */
 function renderEccentricity(predictions) {
+    renderHelperText("Eccentricity")
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
@@ -407,6 +419,20 @@ function calculateRadians(percent, min, max, flip=false) {
     }
 
     return percent * (max - min) + min;
+}
+
+/**
+ * Render 
+ * 
+ * @param {String} text 
+ */
+function renderHelperText(text) {
+    context.fillStyle = "white";
+    context.rect(0, canvas.height - 50, canvas.width, 100)
+    context.font = '48px serif';
+
+    context.fillStyle = 'black';
+    context.fillText(text, 100, 100);
 }
 
 // Load the model.
