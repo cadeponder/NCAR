@@ -100,7 +100,7 @@ function setCycle(c) {
  */
 function runDetection() {
     model.detect(video).then(predictions => {
-        console.log("Predictions: ", predictions);
+        // console.log("Predictions: ", predictions);
         model.renderPredictions(predictions, canvas, context, video);
 
         // Eccentricity or Precession render orbit controls
@@ -224,17 +224,25 @@ function renderOrbit(bbox, c) {
             // change y so that the Earth stays on the orbit
             bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
             renderEarth(bbox, .2, percentScale)
-        } else {
+        } else if (x > 0) {
+            // this is how far left hand is from center on a percentage
+            handDistFromCenter = (250 - x)/250
+
             // PRECESSION: hand moves NH summer location on orbit
             // normalize distance to 0-180 (corresponds to position on ellipse)
-            positionOnEllipse = calculateRadians(percentScale, 0, 180)
+            positionOnEllipse = calculateRadians(handDistFromCenter, Math.PI, 2 * Math.PI)
+            console.log(positionOnEllipse)
 
             // adjust bbox so that x, y of Earth moves across orbit
             // based on left hand position
             // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
-            bbox[0] = centerX + xRadius * Math.cos(positionOnEllipse)
-            bbox[1] = centerY + yRadius * Math.sin(positionOnEllipse)
-            renderEarth(bbox, .2, percentScale)
+            bbox[0] = centerX + xRadius * Math.cos(positionOnEllipse) - (bbox[2] / 2)
+            bbox[1] = centerY + yRadius * Math.sin(positionOnEllipse) - (bbox[3] / 2)
+
+            // adjust angle so that Earth's axis is pointed towards sun (NH summer)
+            adjustedAngle = calculateRadians(handDistFromCenter, -.2, .2, true)
+
+            renderEarth(bbox, adjustedAngle, handDistFromCenter)
         }
     }
 }
