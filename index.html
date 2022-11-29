@@ -72,6 +72,7 @@
          
             if (header.
             textContent == "Ready to Embody an Ice Age?"){
+              setCycle('e');
               header.textContent = 'Eccentricity';
               img.src = 'img/eccentricity.gif';
               // pageGrid[0].className = 'grid-container';
@@ -82,6 +83,7 @@
             }
            else if (header.
             textContent == 'Eccentricity'){
+              setCycle('p');
               header.textContent = 'Precession';
               img.src = 'img/procession.gif';
               console.log("eccentricity->precession");
@@ -91,6 +93,7 @@
             }
             else if (header.
             textContent == 'Precession'){
+              setCycle('o');
               header.textContent = 'Obliquity';
               img.src = 'img/obliquity.gif';
               console.log("precession->obliquity");
