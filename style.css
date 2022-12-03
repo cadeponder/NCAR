@@ -109,3 +109,8 @@ height: auto;
   font-size: 30px;
   width: 45vw;
 }
+
+#helper-text {
+  background-color: black;
+  color: white;
+}

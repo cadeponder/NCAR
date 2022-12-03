@@ -12,6 +12,11 @@ sunWidth = null;
 
 leftHand = null;
 
+helperText = {
+    raiseLeft: "Raise your left hand",
+    moveLeft: "Move your left hand to cover the Earth with more ice"
+}
+
 // png is not perfect square; scale the height
 heightScale = 1.44
 const earthImageWidth = 200;
@@ -139,8 +144,6 @@ function runDetection() {
  * @param {CycleParam} c (can be 'e' or 'p')
  */
 function renderOrbitInteraction(predictions, c) {
-    renderHelperText("Eccentricity")
-
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
@@ -154,6 +157,12 @@ function renderOrbitInteraction(predictions, c) {
         // look for hand with x coord less than sun x coord
         leftHandArray = hands.filter(h => h.bbox && h.bbox[0] < sunX)
         leftHand = leftHandArray.length > 0 ? leftHandArray[0] : leftHand
+    }
+    
+    if (leftHand == null) {
+        renderHelperText(helperText.raiseLeft)
+    } else {
+        renderHelperText(helperText.moveLeft)
     }
 
     // clear out leftHand if it ends up moving past sun
@@ -169,9 +178,9 @@ function renderOrbitInteraction(predictions, c) {
 }
 
 /**
- * Draw a yellow circle of the face detected
+ * Draw a yellow circle on the face detected
  * 
- * @param {} bbox 
+ * @param {Array} bbox 
  */
  function renderSun(bbox) {
     sun = calcBboxCenter(bbox)
@@ -210,21 +219,14 @@ function renderOrbit(bbox, c) {
     // if sun exists and left hand exists
     if (sunX && sunY && sunX > earthX) {
 
-        // if eccentricity, change ellipse width based on bbox x coordinate
-        if (isEccentricity) {
-            // xRadius = sunX - (x + earthWidth / 2) - sunWidth / 2;
-            xRadius = ((sunX + minimumOrbitRadius) - earthX) / 2
-            // keep orbit at least as big as a perfect circle around sun
-            // xRadius = xRadius > minimumOrbitRadius ? xRadius : minimumOrbitRadius;
-        }
-
-        centerX = xRadius + earthX
+        centerX = sunX - 50
         centerY = sunY
 
-        // adjust center of orbit if we get more eccentric than perfect circle
-        // if (xRadius > minimumOrbitRadius) {
-        //     centerX = xRadius + x + earthWidth / 2 - sunWidth / 2;
-        // }
+        // if eccentricity, change ellipse width based on bbox x coordinate
+        if (isEccentricity) {
+            xRadius = ((sunX + minimumOrbitRadius) - earthX) / 2
+            centerX = xRadius + earthX
+        }
 
         // Draw the ellipse
         context.strokeStyle = "red";
@@ -241,8 +243,9 @@ function renderOrbit(bbox, c) {
         // For eccentricity, this will make the ice melt based on how far earth is from sun
         // For precession, we will use this to move earth along the orbital path
         distSunToEarth = calcDistance(sunX, sunY, earthX, earthY)
-        //todo: check numbers... what is maximum?
-        percentScale = (500 - distSunToEarth) / 500
+
+        // max distance is size of canvas, but that doesn't 
+        percentScale = (canvas.width / 3 - distSunToEarth) / (canvas.width / 3)
 
         // ECCENTRICITY: hand stretches orbit width
         if (isEccentricity) {
@@ -256,7 +259,6 @@ function renderOrbit(bbox, c) {
             // PRECESSION: hand moves NH summer location on orbit
             // normalize distance to 0-180 (corresponds to position on ellipse)
             positionOnEllipse = calculateRadians(handDistFromCenter, Math.PI, 2 * Math.PI)
-            console.log(positionOnEllipse)
 
             // adjust bbox so that x, y of Earth moves across orbit
             // based on left hand position
