@@ -8,12 +8,15 @@ let cycleParam = null;
 
 sunX = null;
 sunY = null;
+sunWidth = null;
+
+leftHand = null;
 
 // png is not perfect square; scale the height
 heightScale = 1.44
-const earthWidth = 200;
-const earthHeight = earthWidth * heightScale;
-const earthImage = new Image(earthWidth, earthHeight);
+const earthImageWidth = 200;
+const earthImageHeight = earthImageWidth * heightScale;
+const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
 
 let globalObliquityAngle = 0
@@ -137,20 +140,30 @@ function runDetection() {
  */
 function renderOrbitInteraction(predictions, c) {
     renderHelperText("Eccentricity")
+
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
         renderSun(face.bbox);
     }
 
-    // if point detected, use that to control ellipse
+    // look for left hand
     hands = predictions.filter(p => handLabels.includes(p.label))
+    
+    if (hands.length > 0) {
+        // look for hand with x coord less than sun x coord
+        leftHandArray = hands.filter(h => h.bbox && h.bbox[0] < sunX)
+        leftHand = leftHandArray.length > 0 ? leftHandArray[0] : leftHand
+    }
 
-    if (hands.length > 0 && hands[0].bbox || c == CycleParams.p) {
-        bboxParam = [0,0,0,0]
-        if (hands.length > 0) {
-            bboxParam = hands[0].bbox
-        }
+    // clear out leftHand if it ends up moving past sun
+    if (leftHand && leftHand.bbox && leftHand.bbox[0] > sunX - sunWidth) {
+        leftHand = null
+    }
+
+    // if Precession, always render Earth on orbit regardless of left hand presence
+    if (leftHand || c == CycleParams.p) {
+        bboxParam = leftHand ? leftHand.bbox : [0,0,0,0]
         renderOrbit(bboxParam, c)
     }
 }
@@ -164,11 +177,12 @@ function renderOrbitInteraction(predictions, c) {
     sun = calcBboxCenter(bbox)
     sunX = sun[0]
     sunY = sun[1]
+    sunWidth = bbox[2]
 
     // sun on face
     context.fillStyle = "yellow";
     context.beginPath();
-    context.arc(sunX, sunY, 50, 0, 2 * Math.PI);
+    context.arc(sunX, sunY, sunWidth / 2, 0, 2 * Math.PI);
     context.closePath()
     context.fill();
 }
@@ -176,30 +190,43 @@ function renderOrbitInteraction(predictions, c) {
 /**
  * Draw an orbit based on the LEFT hand position
  * 
- * @param {} bbox 
+ * @param {} bbox - bounding box of left hand
  * @param {CycleParam} c - can be 'e' or 'p'
  */
 function renderOrbit(bbox, c) {
     x = bbox[0]
     y = bbox[1]
+    earthWidth = bbox[2]
     isEccentricity = c == CycleParams.e
-    xRadius = 300
-    yRadius = 100
 
-    // if sun face exists
-    if (sunX && sunY) {
+    maxEarthWidth = sunWidth / 1.25;
+    earthWidth = maxEarthWidth > earthWidth ? maxEarthWidth : earthWidth;
+    earthCenterX = x + earthWidth / 2;
+    
+    // default orbit for precession
+    xRadius = 200;
+    yRadius = 75;
+
+    minimumOrbitRadius = sunWidth;
+
+    // if sun exists and left hand exists
+    if (sunX && sunY && sunX > x) {
 
         // if eccentricity, change ellipse width based on bbox x coordinate
-        // TODO: Scale 250 distance so that it works better when person is further away
-        // also ellipse x below probably needs to be updated
         if (isEccentricity) {
-            xRadius = 250 - bbox[0];
-            // never let xRadius go negative
-            xRadius = xRadius > 0 ? xRadius : 0;
+            // xRadius = sunX - (x + earthWidth / 2) - sunWidth / 2;
+            xRadius = ((sunX + minimumOrbitRadius) - earthCenterX) / 2
+            // keep orbit at least as big as a perfect circle around sun
+            // xRadius = xRadius > minimumOrbitRadius ? xRadius : minimumOrbitRadius;
         }
 
-        centerX = sunX - 50
+        centerX = xRadius + earthCenterX
         centerY = sunY
+
+        // adjust center of orbit if we get more eccentric than perfect circle
+        // if (xRadius > minimumOrbitRadius) {
+        //     centerX = xRadius + x + earthWidth / 2 - sunWidth / 2;
+        // }
 
         // Draw the ellipse
         context.strokeStyle = "red";
@@ -217,13 +244,13 @@ function renderOrbit(bbox, c) {
         // For precession, we will use this to move earth along the orbital path
         distSunToEarth = calcDistance(sunX, sunY, x, y)
         //todo: check numbers... what is maximum?
-        percentScale = (500 - distSunToEarth) / 500
+        percentScale = (700 - distSunToEarth) / 700
 
         // ECCENTRICITY: hand stretches orbit width
         if (isEccentricity) {
             // change y so that the Earth stays on the orbit
             bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
-            renderEarth(bbox, .2, percentScale)
+            renderEarth(bbox, .2, percentScale, maxEarthWidth)
         } else if (x > 0) {
             // this is how far left hand is from center on a percentage
             handDistFromCenter = (250 - x)/250
@@ -242,7 +269,7 @@ function renderOrbit(bbox, c) {
             // adjust angle so that Earth's axis is pointed towards sun (NH summer)
             adjustedAngle = calculateRadians(handDistFromCenter, -.2, .2, true)
 
-            renderEarth(bbox, adjustedAngle, handDistFromCenter)
+            renderEarth(bbox, adjustedAngle, handDistFromCenter, maxEarthWidth)
         }
     }
 }
@@ -364,13 +391,16 @@ function calculateObliquityAngle(hand1, hand2) {
  * @param {Array} bbox - bounding box: [x, y, width, height]
  * @param {number} angle - the rotation of the axis based on the hand position
  * @param {number} scalePercent - percentge to scale the ice cap by
+ * @param {number} maxEarthWidth - prevents earth from getting too big in comparison to sun
  */
-function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
+function renderEarth(bbox, angle, scalePercent=(angle/angleMax), maxEarthWidth=500) {
     earthCenter = calcBboxCenter(bbox)
     earthX = earthCenter[0]
     earthY = earthCenter[1]
+    bboxWidth = bbox[2]
 
-    width = bbox[2]
+    // set width of earth to either the hand's width or the maximum passed in as maxEarthWidth
+    width = bboxWidth > maxEarthWidth ? maxEarthWidth : bboxWidth
     height = width * heightScale
 
     //      translate to center of bbox
