@@ -194,14 +194,12 @@ function renderOrbitInteraction(predictions, c) {
  * @param {CycleParam} c - can be 'e' or 'p'
  */
 function renderOrbit(bbox, c) {
-    x = bbox[0]
-    y = bbox[1]
+    earthCenterForOrbit = calcBboxCenter(bbox)
+    earthX = earthCenterForOrbit[0]
+    earthY = earthCenterForOrbit[1]
     earthWidth = bbox[2]
+    
     isEccentricity = c == CycleParams.e
-
-    maxEarthWidth = sunWidth / 1.25;
-    earthWidth = maxEarthWidth > earthWidth ? maxEarthWidth : earthWidth;
-    earthCenterX = x + earthWidth / 2;
     
     // default orbit for precession
     xRadius = 200;
@@ -210,17 +208,17 @@ function renderOrbit(bbox, c) {
     minimumOrbitRadius = sunWidth;
 
     // if sun exists and left hand exists
-    if (sunX && sunY && sunX > x) {
+    if (sunX && sunY && sunX > earthX) {
 
         // if eccentricity, change ellipse width based on bbox x coordinate
         if (isEccentricity) {
             // xRadius = sunX - (x + earthWidth / 2) - sunWidth / 2;
-            xRadius = ((sunX + minimumOrbitRadius) - earthCenterX) / 2
+            xRadius = ((sunX + minimumOrbitRadius) - earthX) / 2
             // keep orbit at least as big as a perfect circle around sun
             // xRadius = xRadius > minimumOrbitRadius ? xRadius : minimumOrbitRadius;
         }
 
-        centerX = xRadius + earthCenterX
+        centerX = xRadius + earthX
         centerY = sunY
 
         // adjust center of orbit if we get more eccentric than perfect circle
@@ -242,18 +240,18 @@ function renderOrbit(bbox, c) {
         // Calculate distance between hand and face
         // For eccentricity, this will make the ice melt based on how far earth is from sun
         // For precession, we will use this to move earth along the orbital path
-        distSunToEarth = calcDistance(sunX, sunY, x, y)
+        distSunToEarth = calcDistance(sunX, sunY, earthX, earthY)
         //todo: check numbers... what is maximum?
-        percentScale = (700 - distSunToEarth) / 700
+        percentScale = (500 - distSunToEarth) / 500
 
         // ECCENTRICITY: hand stretches orbit width
         if (isEccentricity) {
             // change y so that the Earth stays on the orbit
             bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
-            renderEarth(bbox, .2, percentScale, maxEarthWidth)
-        } else if (x > 0) {
+            renderEarth(bbox, .2, percentScale)
+        } else if (earthX > 0) {
             // this is how far left hand is from center on a percentage
-            handDistFromCenter = (250 - x)/250
+            handDistFromCenter = (250 - earthX)/250
 
             // PRECESSION: hand moves NH summer location on orbit
             // normalize distance to 0-180 (corresponds to position on ellipse)
@@ -269,7 +267,7 @@ function renderOrbit(bbox, c) {
             // adjust angle so that Earth's axis is pointed towards sun (NH summer)
             adjustedAngle = calculateRadians(handDistFromCenter, -.2, .2, true)
 
-            renderEarth(bbox, adjustedAngle, handDistFromCenter, maxEarthWidth)
+            renderEarth(bbox, adjustedAngle, handDistFromCenter)
         }
     }
 }
@@ -391,23 +389,21 @@ function calculateObliquityAngle(hand1, hand2) {
  * @param {Array} bbox - bounding box: [x, y, width, height]
  * @param {number} angle - the rotation of the axis based on the hand position
  * @param {number} scalePercent - percentge to scale the ice cap by
- * @param {number} maxEarthWidth - prevents earth from getting too big in comparison to sun
  */
-function renderEarth(bbox, angle, scalePercent=(angle/angleMax), maxEarthWidth=500) {
-    earthCenter = calcBboxCenter(bbox)
-    earthX = earthCenter[0]
-    earthY = earthCenter[1]
-    bboxWidth = bbox[2]
+function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
+    earthCenter = calcBboxCenter(bbox);
+    earthX = earthCenter[0];
+    earthY = earthCenter[1];
+    bboxWidth = bbox[2];
 
-    // set width of earth to either the hand's width or the maximum passed in as maxEarthWidth
-    width = bboxWidth > maxEarthWidth ? maxEarthWidth : bboxWidth
-    height = width * heightScale
+    width = bboxWidth;
+    height = width * heightScale;
 
     //      translate to center of bbox
 
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
-    context.translate(earthX, earthY)
-    context.rotate(angle)
+    context.translate(earthX, earthY);
+    context.rotate(angle);
 
     //      Draw Earth image on bbox
 
