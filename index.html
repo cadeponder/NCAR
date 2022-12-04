@@ -25,7 +25,7 @@
         <button>YES</button></div>
         
       <div id="edMedia"><img id="img" src="" alt=""></div>  
-      <div id="edText">(Educational Text)</div>
+      <div id="edText"><p>(Educational Text)</p></div>
 
       <div id="interaction">
         <div class="main">
@@ -52,6 +52,7 @@
     <!-- BUTTON -->
     <script>
         const header = document.getElementById('headerTxt');
+        const edText = document.getElementById('edText');
         const edMedia = document.getElementById('edMedia')
         const img = document.getElementById('img'); 
         const feedback = document.getElementById('feedback'); 
@@ -62,6 +63,7 @@
 
         if (header.
             textContent = "Ready to Embody an Ice Age?") {
+              edText.textContent = "Info about LGM";
               feedback.style.visibility = 'hidden';
               edMedia.style.visibility = 'hidden';
               // normalGrid[0].className = 'grid-container-home';
@@ -76,6 +78,7 @@
             textContent == "Ready to Embody an Ice Age?"){
               setCycle('e');
               header.textContent = 'Eccentricity';
+              edText.textContent = "Eccentricity determines how close to a circle the Earth's orbit is. It causes the distance between the Earth and the Sun to change throughout the year. This change in distance does not control the seasons, but assists in altering Earth's temperature during ice ages. During the last ice age, the Earth had a high eccentricity, causing it to be far from the Sun during part of its orbit.";
               img.src = 'gifs/eccentricity.gif';
               // pageGrid[0].className = 'grid-container';
               edMedia.style.visibility = 'visible';
@@ -88,7 +91,8 @@
             textContent == 'Eccentricity'){
               setCycle('p');
               header.textContent = 'Precession';
-              img.src = 'img/procession.gif';
+              edText.textContent = "Precession is when the axis of the Earth changes its direction like how a top wobbles when it spins. Procession changes the point in the Earth's orbit at which each season (Fall, Winter, Spring, Summer) occurs. During the last ice age, the procession of the Earth made it so the northern summer was when the Earth was furthest from the Sun.";
+              img.src = 'gifs/precession.gif';
               console.log("eccentricity->precession");
 
               // unhides extra content hidden on index
@@ -97,7 +101,8 @@
             textContent == 'Precession'){
               setCycle('o');
               header.textContent = 'Obliquity';
-              img.src = '/obliquity.gif';
+              edText.textContent = "Obliquity is the tilt of the Earth's axis. Low obliquity means a shallow tilt, making the axis more vertical. When obliquity is low, less sunlight from space reaches land of the northern hemisphere. During the last ice age, the Earth had low obliquity.";
+              img.src = 'gifs/obliquity.gif';
               console.log("precession->obliquity");
               // unhides extra content hidden on index
             }

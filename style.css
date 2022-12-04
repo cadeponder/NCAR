@@ -14,7 +14,12 @@ body {
     margin-top: 15px;
 }
 #img {
-  width: 100%;
+  width: 80%;
+  /* height: 80%; */
+}
+#edText {
+  font-size: 18pt;
+  font-weight: 600;
 }
 /* #canvas {
 width: 100% !important;
@@ -50,7 +55,7 @@ height: auto;
 }
 #edText { 
   grid-area: edText; 
-  height: 20vh;
+  height: 15vh;
   margin-top: -5vh;
 }
 #interaction { 
@@ -74,6 +79,7 @@ height: auto;
   justify-content: space-around;
   height: 100vh;
 }
+
 .grid-container> div {
   background-color: tan;
   text-align: left;
