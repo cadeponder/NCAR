@@ -51,6 +51,9 @@ pOverlay.src = "img/pOverlay.png";
 const oOverlay = new Image(640, 480);
 oOverlay.src = "img/oOverlay.png";
 
+const introOverlay = new Image(640, 480);
+introOverlay.src = "img/introOverlay.png";
+
 let globalObliquityAngle = 0
 const angleMax = .75
 
@@ -139,6 +142,12 @@ function runDetection() {
             // console.log("Predictions: ", predictions);
             model.renderPredictions(predictions, canvas, context, video);
 
+            // Intro page
+            if (cycleParam == null) {
+                context.drawImage(introOverlay, 0, 0, canvas.width, canvas.height);
+                detectBothHands(predictions);
+            }
+
             // Eccentricity
             if (cycleParam == CycleParams.e) {
                 callCycleFunction(shownEOverlay, eOverlay, startedETimer, renderEccentricity, predictions);
@@ -165,6 +174,15 @@ function runDetection() {
         // prompt user to start their video
         homeHelperText = document.getElementById('edText');
         homeHelperText.textContent = helperText.pause;
+    }
+}
+
+function detectBothHands(predictions) {
+    hands = findHands(predictions);
+    
+    if (hands.length >= 2) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        changePage();
     }
 }
 
@@ -632,7 +650,7 @@ function calculateRadians(percent, min, max, flip=false) {
 }
 
 /**
- * Render 
+ * Render text to instruct user
  * 
  * @param {String} text 
  */
