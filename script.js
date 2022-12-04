@@ -26,7 +26,12 @@ const helperText = {
     pWin: "by putting the summer equinox in Apihelion",
     oWin: "by tilting the Earth to 22.1 degrees",
     eTooHigh: "Too wide. Make the orbit less eccentric",
-    eTooLow: "Not wide enough. Make the orbit more eccentric"
+    eTooLow: "Not wide enough. Make the orbit more eccentric",
+    oTooLow: "Tilted too far",
+    oTooHigh: "Not tilted enough",
+    eWinBottom: "Eccentricity set to ice age conditions",
+    pWinBottom: "Summer equinox set to ice age conditions",
+    oWinBottom: "Obliquity set to ice age conditions"
 }
 
 // booleans for tracking help image overlays
@@ -57,7 +62,7 @@ let eWinningDist = 0;
 let eWinningBbox = null;
 let eWon = false; // switch if they win
 
-let pSwitchCount = 0;
+let hasSwitchedRight = false;
 const pWin = 3; // count how many times they have switched between peri to api
 let pWon = false; // switch if they win
 
@@ -67,9 +72,9 @@ const oWinRange = .05;
 let oWon = false; // switch if they win
 
 // these are so we can manually clear timeouts on page transitions
-winTimeout = null;
-overlayTimeout = null;
-winTransitionTimeout = null;
+let winTimeout = null;
+let overlayTimeout = null;
+let winTransitionTimeout = null;
 
 
 /**
@@ -167,6 +172,19 @@ function toggleVideo() {
  */
 function setCycle(c) {
     cycleParam = c
+}
+
+/**
+ * Change button over to reload the page
+ */
+function allowRestart() {
+    restartButton = document.querySelector("button");
+    restartButton.innerText = "Start over";
+    restartButton.addEventListener("click", reloadPage);
+}
+
+function reloadPage() {
+    location.reload();
 }
 
 /**
@@ -441,6 +459,7 @@ function renderEccentricity(predictions) {
                 eWon = true; // just right!
                 eWinningDist = distSunToEarth;
                 eWinningBbox = bbox;
+                renderHelperText(helperText.eWinBottom);
             }
         }
     }
@@ -523,8 +542,6 @@ function renderPerihelionInteraction(predictions) {
  * @param {Array or null} right - bounding box of left hand
  */
 function renderOrbitP(left, right) {
-    currentPChoice = choice;
-
     if (left && right) {
         // if left higher up than right, choose left
         // note that y position grows as it moves DOWN the screen
@@ -540,8 +557,8 @@ function renderOrbitP(left, right) {
     }
 
     // increment count if they switched left/right hand
-    if (currentPChoice != choice) {
-        pSwitchCount++;
+    if (choice == Choices.right) {
+        hasSwitchedRight = true;
     }
 
     // keep left if pWon is true
@@ -586,8 +603,9 @@ function renderOrbitP(left, right) {
 
         renderEarth(bbox, adjustedAngle, percentScale)
 
-        if (choice == Choices.left && pSwitchCount > pWin) {
+        if (choice == Choices.left && hasSwitchedRight) {
             pWon = true;
+            renderHelperText(helperText.pWinBottom);
         }
     }
 }
@@ -637,11 +655,16 @@ function renderObliquity(predictions) {
         renderSunAcrossEarth(face.bbox)
         context.restore()
 
-        if (shouldCheckWin && 
-            oWin - oWinRange < globalObliquityAngle && 
-            globalObliquityAngle < oWin + oWinRange) {
-            oWon = true;
-            oWin = globalObliquityAngle;
+        if (shouldCheckWin) {
+            if (globalObliquityAngle < oWin - oWinRange) { // too low
+                renderHelperText(helperText.oTooLow);
+            } else if (oWin + oWinRange < globalObliquityAngle) { // too high
+                renderHelperText(helperText.oTooHigh);
+            } else { // just right!
+                oWon = true;
+                oWin = globalObliquityAngle;
+                renderHelperText(helperText.oWinBottom);
+            }
         }
     }
 
