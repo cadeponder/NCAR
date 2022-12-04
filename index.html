@@ -76,6 +76,7 @@
          
             if (header.
             textContent == "Ready to Embody an Ice Age?"){
+              resetConditionsPageChange();
               setCycle('e');
               header.textContent = 'Eccentricity';
               edText.textContent = "Eccentricity determines how close to a circle the Earth's orbit is. It causes the distance between the Earth and the Sun to change throughout the year. This change in distance does not control the seasons, but assists in altering Earth's temperature during ice ages. During the last ice age, the Earth had a high eccentricity, causing it to be far from the Sun during part of its orbit.";
@@ -86,19 +87,22 @@
               console.log("home->eccentricity");
               console.log(header);
               // unhides extra content hidden on index
+              resetConditionsPageChange();
             }
            else if (header.
             textContent == 'Eccentricity'){
+              resetConditionsPageChange();
               setCycle('p');
               header.textContent = 'Precession';
               edText.textContent = "Precession is when the axis of the Earth changes its direction like how a top wobbles when it spins. Procession changes the point in the Earth's orbit at which each season (Fall, Winter, Spring, Summer) occurs. During the last ice age, the procession of the Earth made it so the northern summer was when the Earth was furthest from the Sun.";
               img.src = 'gifs/precession.gif';
               console.log("eccentricity->precession");
-
+              resetConditionsPageChange();
               // unhides extra content hidden on index
             }
             else if (header.
             textContent == 'Precession'){
+              resetConditionsPageChange();
               setCycle('o');
               header.textContent = 'Obliquity';
               edText.textContent = "Obliquity is the tilt of the Earth's axis. Low obliquity means a shallow tilt, making the axis more vertical. When obliquity is low, less sunlight from space reaches land of the northern hemisphere. During the last ice age, the Earth had low obliquity.";

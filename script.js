@@ -6,35 +6,77 @@ let isVideo = false;
 let model = null;
 let cycleParam = null;
 
-sunX = null;
-sunY = null;
-sunWidth = null;
+let sunX = null;
+let sunY = null;
+let sunWidth = null;
 
-leftHandE = null;
-leftHandP = null;
-rightHandP = null;
+let leftHandE = null;
+let leftHandP = null;
+let rightHandP = null;
 
-helperText = {
+const helperText = {
     raiseLeft: "Raise your left hand",
     moveLeft: "Move your left hand to cover the Earth with more ice",
     chooseOneHand: "Raise left or right hand to set summer equinox position",
     summerPeri: "Summer equinox is in Perihelion",
     summerApi: "Summer equinox is in Apihelion",
     obliquity: "Raise both hands to tilt the Earth",
-    pause: "Waiting for model to load..."
+    pause: "Waiting for model to load...",
+    eWin: "by changing eccentricity",
+    pWin: "by putting the summer equinox in Apihelion",
+    oWin: "by tilting the Earth to 22.1 degrees",
+    eTooHigh: "Too wide. Make the orbit less eccentric",
+    eTooLow: "Not wide enough. Make the orbit more eccentric"
 }
 
 // booleans for tracking help image overlays
-shownEOverlay = false;
-startedETimer = false;
-shownPOverlay = false;
-startedPTimer = false;
-shownOOverlay = false;
-startedOTimer = false;
+let shownEOverlay = false;
+let startedETimer = false;
+let shownPOverlay = false;
+let startedPTimer = false;
+let shownOOverlay = false;
+let startedOTimer = false;
 
+/**
+ *      TIMING / WIN CONTROLS
+ */
 // how many ms to show overlay before allowing user interaction
-overlayTimeLimit = 5000;
+const overlayTimeLimit = 5000;
 
+ // all win conditions will only start to check after 10 seconds on that cycle
+const winTimerLimit = 10000; 
+const winTransitionTimer = 5000; // ms time to show win message over canvas
+let startedWinTimer = false;
+let shouldCheckWin = false;
+let changedPageAfterWin = false;
+
+// win conditions
+const eWin = 300; // distance from head to hand must be 300 px on canvas
+const eWinRange = 25; // +=25
+let eWinningDist = 0;
+let eWinningBbox = null;
+let eWon = false; // switch if they win
+
+let pSwitchCount = 0;
+const pWin = 3; // count how many times they have switched between peri to api
+let pWon = false; // switch if they win
+
+// oblquity angle must be += oWinRange from this oWin value to win
+let oWin = .25; // use let so that we change oWin to exact angle once user gets it
+const oWinRange = .05;
+let oWon = false; // switch if they win
+
+// these are so we can manually clear timeouts on page transitions
+winTimeout = null;
+overlayTimeout = null;
+winTransitionTimeout = null;
+
+
+/**
+ * 
+ *      Overlay images
+ * 
+ */
 // png is not perfect square; scale the height
 heightScale = 1.44
 const earthImageWidth = 200;
@@ -75,6 +117,15 @@ const modelParams = {
     bboxLineWidth: "0.01",  // get rid of bounding boxes drawn on video
     fontSize: 0
 }
+
+// decide if Earth should go on left-hand side or right-hand side of sun
+const Choices = {
+    left: 'l',
+    right: 'r',
+    none: 'n'
+}
+
+let choice = Choices.none;
 
 /**
  * Starts the webcam video and runs detection
@@ -150,18 +201,30 @@ function runDetection() {
 
             // Eccentricity
             if (cycleParam == CycleParams.e) {
+                if (eWon) {
+                    winTransition(helperText.eWin);
+                }
+
                 callCycleFunction(shownEOverlay, eOverlay, startedETimer, renderEccentricity, predictions);
                 startedETimer = true;
             }
             
             // Precession/perihelion
             if (cycleParam == CycleParams.p) {
+                if (pWon) {
+                    winTransition(helperText.pWin);
+                }
+                
                 callCycleFunction(shownPOverlay, pOverlay, startedPTimer, renderPerihelionInteraction, predictions);
                 startedPTimer = true;
             }
 
             // Obliquity
             if (cycleParam == CycleParams.o) {
+                if (oWon) {
+                    winTransition(helperText.oWin)
+                }
+                
                 callCycleFunction(shownOOverlay, oOverlay, startedOTimer, renderObliquity, predictions);
                 startedOTimer = true;
             }
@@ -198,14 +261,32 @@ function detectBothHands(predictions) {
  */
 function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunctionCallback, predictions) {
     if (!shownOverlay) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
 
         if (!startedTimer) {
-            setTimeout(clearOverlay, overlayTimeLimit);
+            resetConditionsPageChange();
+            overlayTimeout = setTimeout(clearOverlay, overlayTimeLimit);
         }
     } else {
         cycleFunctionCallback(predictions);
     }
+}
+
+/**
+ * Reset all of the win condition booleans
+ */
+function resetConditionsPageChange() {
+    // reset all of the win condition booleans
+    startedWinTimer = false;
+    shouldCheckWin = false;
+    changedPageAfterWin = false;
+
+    clearTimeout(winTimeout);
+    clearTimeout(winTransitionTimeout);
+    clearTimeout(overlayTimeout);
+
+    renderHelperText("");
 }
 
 /**
@@ -230,10 +311,49 @@ function clearOverlay() {
 }
 
 /**
+ * 
+ * Starts the timer to wait for winTimerLimit ms 
+ * before allowing user to "win" and progress to next page
+ * 
+ */
+function startWinTimer() {
+    winTimeout = setTimeout(() => {
+        shouldCheckWin = true;
+    }, winTimerLimit)
+}
+
+/**
+ * 
+ * Show a message when the user "wins"
+ * 
+ * @param {string} text 
+ */
+function winTransition(text) {
+    context.fillStyle = "white";
+    context.rect(0, 0, canvas.width, 100);
+    context.fill();
+    context.fillStyle = "black";
+    context.font = '32px serif';
+    context.fillText("You just promoted an ice age", 10, 50);
+    context.fillText(text, 10, 80);
+
+    if (!changedPageAfterWin) {
+        winTransitionTimeout = setTimeout(() => {
+            changePage();
+        }, winTransitionTimer)
+
+        changedPageAfterWin = true;
+    }
+}
+
+/**
  *      ECCENTRICITY 
  */
-
 function renderEccentricity(predictions) {
+    if (!startedWinTimer) {
+        startWinTimer();
+    }
+
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
@@ -248,12 +368,14 @@ function renderEccentricity(predictions) {
         leftHandE = hands.find(h => h.bbox && h.bbox[0] < sunX)
     }
     
-    if (leftHandE == null) {
-        renderHelperText(helperText.raiseLeft)
-    } else {
-        // remove overlay
-        shownEOverlay = true;
-        renderHelperText(helperText.moveLeft)
+    if (!shouldCheckWin) {
+        if (leftHandE == null) {
+            renderHelperText(helperText.raiseLeft)
+        } else {
+            // remove overlay
+            shownEOverlay = true;
+            renderHelperText(helperText.moveLeft)
+        }
     }
 
     // clear out leftHand if it ends up moving past sun
@@ -262,6 +384,7 @@ function renderEccentricity(predictions) {
     }
 
     if (leftHandE) {
+        if (eWon) leftHandE = {bbox: eWinningBbox};
         renderOrbitEccentricity(leftHandE.bbox)
     }
 }
@@ -297,6 +420,10 @@ function renderEccentricity(predictions) {
         // this will make the ice melt based on how far earth is from sun
         distSunToEarth = calcDistance(sunX, sunY, earthX, earthY)
 
+        if (eWon) {
+            distSunToEarth = eWinningDist;
+        }
+
         // divide by 3 here so that ice growth is more drastic
         percentScale = (canvas.width / 3 - distSunToEarth) / (canvas.width / 3)
 
@@ -304,6 +431,18 @@ function renderEccentricity(predictions) {
         // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
         bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
         renderEarth(bbox, .2, percentScale)
+
+        if (shouldCheckWin) {
+            if (distSunToEarth < eWin - eWinRange) { // too low
+                renderHelperText(helperText.eTooLow);
+            } else if (distSunToEarth > eWin + eWinRange) { // too high
+                renderHelperText(helperText.eTooHigh);
+            } else {
+                eWon = true; // just right!
+                eWinningDist = distSunToEarth;
+                eWinningBbox = bbox;
+            }
+        }
     }
 }
 
@@ -384,14 +523,7 @@ function renderPerihelionInteraction(predictions) {
  * @param {Array or null} right - bounding box of left hand
  */
 function renderOrbitP(left, right) {
-    // decide if Earth should go on left-hand side or right-hand side of sun
-    const Choices = {
-        left: 'l',
-        right: 'r',
-        none: 'n'
-    }
-
-    let choice = Choices.none;
+    currentPChoice = choice;
 
     if (left && right) {
         // if left higher up than right, choose left
@@ -405,6 +537,16 @@ function renderOrbitP(left, right) {
         choice = Choices.left;
     } else if (right) {
         choice = Choices.right;
+    }
+
+    // increment count if they switched left/right hand
+    if (currentPChoice != choice) {
+        pSwitchCount++;
+    }
+
+    // keep left if pWon is true
+    if (pWon) {
+        choice = Choices.left;
     }
 
     // show appropriate helper text about summer equinox position
@@ -443,6 +585,10 @@ function renderOrbitP(left, right) {
         adjustedAngle = calculateRadians(percentScale, -.2, .2, true)
 
         renderEarth(bbox, adjustedAngle, percentScale)
+
+        if (choice == Choices.left && pSwitchCount > pWin) {
+            pWon = true;
+        }
     }
 }
 
@@ -458,6 +604,10 @@ function renderOrbitP(left, right) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
+    if (!startedWinTimer) {
+        startWinTimer();
+    }
+
     renderHelperText(helperText.obliquity)
 
     // find all hands
@@ -475,13 +625,26 @@ function renderObliquity(predictions) {
         }
     }
 
+    // if won, keep angle at winning angle
+    if (oWon) {
+        globalObliquityAngle = oWin;
+    }
+
     // if face detected, render earth there
     if (face && face.bbox) {
         renderEarth(face.bbox, globalObliquityAngle)
 
         renderSunAcrossEarth(face.bbox)
         context.restore()
+
+        if (shouldCheckWin && 
+            oWin - oWinRange < globalObliquityAngle && 
+            globalObliquityAngle < oWin + oWinRange) {
+            oWon = true;
+            oWin = globalObliquityAngle;
+        }
     }
+
 }
 
 /**
