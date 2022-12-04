@@ -20,7 +20,8 @@ helperText = {
     chooseOneHand: "Raise left or right hand to set summer equinox position",
     summerPeri: "Summer equinox is in Perihelion",
     summerApi: "Summer equinox is in Apihelion",
-    obliquity: "Raise both hands to tilt the Earth"
+    obliquity: "Raise both hands to tilt the Earth",
+    pause: "Waiting for model to load..."
 }
 
 // booleans for tracking help image overlays
@@ -133,32 +134,38 @@ function setCycle(c) {
  * 
  */
 function runDetection() {
-    model.detect(video).then(predictions => {
-        // console.log("Predictions: ", predictions);
-        model.renderPredictions(predictions, canvas, context, video);
+    if (model) {
+        model.detect(video).then(predictions => {
+            // console.log("Predictions: ", predictions);
+            model.renderPredictions(predictions, canvas, context, video);
 
-        // Eccentricity
-        if (cycleParam == CycleParams.e) {
-            callCycleFunction(shownEOverlay, eOverlay, startedETimer, renderEccentricity, predictions);
-            startedETimer = true;
-        }
-        
-        // Precession/perihelion
-        if (cycleParam == CycleParams.p) {
-            callCycleFunction(shownPOverlay, pOverlay, startedPTimer, renderPerihelionInteraction, predictions);
-            startedPTimer = true;
-        }
+            // Eccentricity
+            if (cycleParam == CycleParams.e) {
+                callCycleFunction(shownEOverlay, eOverlay, startedETimer, renderEccentricity, predictions);
+                startedETimer = true;
+            }
+            
+            // Precession/perihelion
+            if (cycleParam == CycleParams.p) {
+                callCycleFunction(shownPOverlay, pOverlay, startedPTimer, renderPerihelionInteraction, predictions);
+                startedPTimer = true;
+            }
 
-        // Obliquity
-        if (cycleParam == CycleParams.o) {
-            callCycleFunction(shownOOverlay, oOverlay, startedOTimer, renderObliquity, predictions);
-            startedOTimer = true;
-        }
+            // Obliquity
+            if (cycleParam == CycleParams.o) {
+                callCycleFunction(shownOOverlay, oOverlay, startedOTimer, renderObliquity, predictions);
+                startedOTimer = true;
+            }
 
-        if (isVideo) {
-            requestAnimationFrame(runDetection);
-        }
-    });
+            if (isVideo) {
+                requestAnimationFrame(runDetection);
+            }
+        });
+    } else {
+        // prompt user to start their video
+        homeHelperText = document.getElementById('edText');
+        homeHelperText.textContent = helperText.pause;
+    }
 }
 
 /**
