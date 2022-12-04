@@ -23,12 +23,32 @@ helperText = {
     obliquity: "Raise both hands to tilt the Earth"
 }
 
+// booleans for tracking help image overlays
+shownEOverlay = false;
+startedETimer = false;
+shownPOverlay = false;
+startedPTimer = false;
+shownOOverlay = false;
+startedOTimer = false;
+
+// how many ms to show overlay before allowing user interaction
+overlayTimeLimit = 5000;
+
 // png is not perfect square; scale the height
 heightScale = 1.44
 const earthImageWidth = 200;
 const earthImageHeight = earthImageWidth * heightScale;
 const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
+
+const eOverlay = new Image(640, 480);
+eOverlay.src = "img/eOverlay.png";
+
+const pOverlay = new Image(640, 480);
+pOverlay.src = "img/pOverlay.png";
+
+const oOverlay = new Image(640, 480);
+oOverlay.src = "img/oOverlay.png";
 
 let globalObliquityAngle = 0
 const angleMax = .75
@@ -119,18 +139,20 @@ function runDetection() {
 
         // Eccentricity
         if (cycleParam == CycleParams.e) {
-            renderEccentricity(predictions)
+            callCycleFunction(shownEOverlay, eOverlay, startedETimer, renderEccentricity, predictions);
+            startedETimer = true;
         }
         
         // Precession/perihelion
         if (cycleParam == CycleParams.p) {
-            renderPerihelionInteraction(predictions)
+            callCycleFunction(shownPOverlay, pOverlay, startedPTimer, renderPerihelionInteraction, predictions);
+            startedPTimer = true;
         }
 
         // Obliquity
         if (cycleParam == CycleParams.o) {
-            renderHelperText(helperText.obliquity)
-            renderObliquity(predictions)
+            callCycleFunction(shownOOverlay, oOverlay, startedOTimer, renderObliquity, predictions);
+            startedOTimer = true;
         }
 
         if (isVideo) {
@@ -139,6 +161,48 @@ function runDetection() {
     });
 }
 
+/**
+ *   
+ * Calls the cycleFunction after a timeout is set to show an introductory overlay
+ * 
+ * @param {boolean} shownOverlay - has the overlay been shown to the user?
+ * @param {boolean} startedTimer - has setTimeout been called?
+ * @param {Image} overlayImg - overlay image to show
+ * @param {function} cycleFunctionCallback - eg. renderEccentricity, renderObliquity
+ * @param {Object} predictions - the model predictions to pass to cycleFunctionCallback
+ */
+function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunctionCallback, predictions) {
+    if (!shownOverlay) {
+        context.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
+
+        if (!startedTimer) {
+            setTimeout(clearOverlay, overlayTimeLimit);
+        }
+    } else {
+        cycleFunctionCallback(predictions);
+    }
+}
+
+/**
+ * 
+ * Clear the helper overlay and set booleans so that it doesn't show again
+ * 
+ */
+function clearOverlay() {
+    if (cycleParam == CycleParams.e) {
+        shownEOverlay = true;
+    }
+
+    if (cycleParam == CycleParams.p) {
+        shownPOverlay = true;
+    }
+
+    if (cycleParam == CycleParams.o) {
+        shownOOverlay = true;
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 /**
  *      ECCENTRICITY 
@@ -162,6 +226,8 @@ function renderEccentricity(predictions) {
     if (leftHandE == null) {
         renderHelperText(helperText.raiseLeft)
     } else {
+        // remove overlay
+        shownEOverlay = true;
         renderHelperText(helperText.moveLeft)
     }
 
@@ -367,6 +433,8 @@ function renderOrbitP(left, right) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
+    renderHelperText(helperText.obliquity)
+
     // find all hands
     hands = findHands(predictions)
     face = predictions.find(p => p.label == 'face')
