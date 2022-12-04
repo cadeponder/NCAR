@@ -22,7 +22,7 @@
 
       <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
         <!-- get rid of button when movement based 'yes' made -->
-        <button>NEXT</button></div>
+        <button>YES</button></div>
         
       <div id="edMedia"><img id="img" src="img/lgm.jpg" alt=""></div>  
       <div id="edText"><p>The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.</p></div>
@@ -122,10 +122,12 @@
             }
             else if (header.
             textContent == 'Obliquity'){
-              header.textContent = "Congratulations, You've Created an Ice Age!";
+              header.textContent = "You did it!";
               img.src = 'gifs/obliquity.gif';
               console.log("final page");
               // unhides extra content hidden on index
+
+              allowRestart();
             }
            
         }
