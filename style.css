@@ -36,9 +36,9 @@ height: auto;
 /* GRID STYLING AND LAYOUT */
 #feedback { 
   grid-area: feedback; 
-  height: 10vh;
-  margin-bottom: 10vh;
-  margin-top: -10vh;
+  height: 5vh;
+  /* margin-bottom: 10vh; */
+  margin-top: -20vh;
 }
 
 #header { 
@@ -52,6 +52,8 @@ height: auto;
   grid-area: media; 
   margin-top: -15vh;
   margin-bottom: 5vh;
+  text-align: center;
+  background: black;
 }
 #edText { 
   grid-area: edText; 
@@ -61,18 +63,29 @@ height: auto;
 #interaction { 
   grid-area: interaction; 
   height: 30vh;
+  margin-bottom: 5vh;
 }
 #progress { 
   grid-area: progress; 
-  height: 10vh;
+  display: flex;
+  flex-direction: row;
+  height: 15vh;
+  margin-top: -8vh;
 }
-
+#progress> div> {
+  width: 30%;
+  /* height: 10vh */
+}
+#progress> div> img {
+  width: 100%;
+}
 .grid-container {
   display: grid;
   grid-template-areas:
     'header header header interaction interaction interaction'
     'media media media interaction interaction interaction'
-    'edText edText edText feedback feedback feedback';
+    'edText edText edText feedback feedback feedback'
+    'edText edText edText progress progress progress';
   gap: 10px;
   /* background-color: #2196F3; */
   padding: 10px;

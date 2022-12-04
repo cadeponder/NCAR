@@ -18,14 +18,14 @@
 </head>
 <body class="box--body p20" onload="toggleVideo(!isVideo)">
     <div class="grid-container">
-      <div id="feedback"><p id="helper-text"></p><p>(feedback from past progress here)</p></div>
+      <div id="feedback"><p id="helper-text"></p></div>
 
       <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
         <!-- get rid of button when movement based 'yes' made -->
-        <button>YES</button></div>
+        <button>NEXT</button></div>
         
-      <div id="edMedia"><img id="img" src="" alt=""></div>  
-      <div id="edText"><p>(Educational Text)</p></div>
+      <div id="edMedia"><img id="img" src="img/lgm.jpg" alt=""></div>  
+      <div id="edText"><p>The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.</p></div>
 
       <div id="interaction">
         <div class="main">
@@ -38,7 +38,11 @@
         </div>
       </div>
 
-      <!-- <div id="progress">(Interaction Progress Bar)</div> -->
+      <div id="progress">
+        <div id="eccProg"><img src="img/concept.png" alt=""></div>
+        <div id="precProg"><img src="img/concept.png" alt=""></div>
+        <div id="obProg"><img src="img/concept.png" alt=""></div>
+      </div>
     </div> 
     <!-- Interaction -->
     <script src="carbon-components.js"></script>
@@ -56,6 +60,9 @@
         const edMedia = document.getElementById('edMedia')
         const img = document.getElementById('img'); 
         const feedback = document.getElementById('feedback'); 
+        const progress = document.getElementById("progress");
+        const precProg = document.getElementById(precProg);
+        const obProg = document.getElementById(obProg);
         // const progressBar = document.getElementById('progress'); 
         const btn = document.querySelector("button");
         const pageGrid = document.getElementsByClassName('grid-container-home');
@@ -63,9 +70,11 @@
 
         if (header.
             textContent = "Ready to Embody an Ice Age?") {
-              edText.textContent = "Info about LGM";
+              edText.textContent = "The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.";
               feedback.style.visibility = 'hidden';
-              edMedia.style.visibility = 'hidden';
+              progress.style.visibility = 'hidden';
+              img.src = 'img/lgm.jpg';
+              img.style.width = "100%";
               // normalGrid[0].className = 'grid-container-home';
             }
            
@@ -84,8 +93,7 @@
               // pageGrid[0].className = 'grid-container';
               edMedia.style.visibility = 'visible';
               feedback.style.visibility = 'visible';
-              console.log("home->eccentricity");
-              console.log(header);
+              img.style.width = "80%";
               // unhides extra content hidden on index
               resetConditionsPageChange();
             }
@@ -96,6 +104,8 @@
               header.textContent = 'Precession';
               edText.textContent = "Precession is when the axis of the Earth changes its direction like how a top wobbles when it spins. Procession changes the point in the Earth's orbit at which each season (Fall, Winter, Spring, Summer) occurs. During the last ice age, the procession of the Earth made it so the northern summer was when the Earth was furthest from the Sun.";
               img.src = 'gifs/precession.gif';
+              progress.style.visibility = 'visible';
+
               console.log("eccentricity->precession");
               resetConditionsPageChange();
               // unhides extra content hidden on index
