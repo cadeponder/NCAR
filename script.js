@@ -8,12 +8,26 @@ let cycleParam = null;
 
 sunX = null;
 sunY = null;
+sunWidth = null;
+
+leftHandE = null;
+leftHandP = null;
+rightHandP = null;
+
+helperText = {
+    raiseLeft: "Raise your left hand",
+    moveLeft: "Move your left hand to cover the Earth with more ice",
+    chooseOneHand: "Raise left or right hand to set summer equinox position",
+    summerPeri: "Summer equinox is in Perihelion",
+    summerApi: "Summer equinox is in Apihelion",
+    obliquity: "Raise both hands to tilt the Earth"
+}
 
 // png is not perfect square; scale the height
 heightScale = 1.44
-const earthWidth = 200;
-const earthHeight = earthWidth * heightScale;
-const earthImage = new Image(earthWidth, earthHeight);
+const earthImageWidth = 200;
+const earthImageHeight = earthImageWidth * heightScale;
+const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
 
 let globalObliquityAngle = 0
@@ -103,13 +117,19 @@ function runDetection() {
         // console.log("Predictions: ", predictions);
         model.renderPredictions(predictions, canvas, context, video);
 
-        // Eccentricity or Precession render orbit controls
-        if (cycleParam == CycleParams.e || cycleParam == CycleParams.p) {
-            renderOrbitInteraction(predictions, cycleParam)
+        // Eccentricity
+        if (cycleParam == CycleParams.e) {
+            renderEccentricity(predictions)
+        }
+        
+        // Precession/perihelion
+        if (cycleParam == CycleParams.p) {
+            renderPerihelionInteraction(predictions)
         }
 
         // Obliquity
         if (cycleParam == CycleParams.o) {
+            renderHelperText(helperText.obliquity)
             renderObliquity(predictions)
         }
 
@@ -122,128 +142,216 @@ function runDetection() {
 
 /**
  *      ECCENTRICITY 
- *          & 
- *      PRECESSION 
- *      FUNCTIONS
  */
 
-/**
- * Renders orbit interactions
- * - Sun on face
- * - Orbit & earth based on LEFT hand
- * 
- * @param {Array} predictions 
- * @param {CycleParam} c (can be 'e' or 'p')
- */
-function renderOrbitInteraction(predictions, c) {
-    renderHelperText("Eccentricity")
+function renderEccentricity(predictions) {
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
         renderSun(face.bbox);
     }
 
-    // if point detected, use that to control ellipse
-    hands = predictions.filter(p => handLabels.includes(p.label))
-
-    if (hands.length > 0 && hands[0].bbox || c == CycleParams.p) {
-        bboxParam = [0,0,0,0]
-        if (hands.length > 0) {
-            bboxParam = hands[0].bbox
-        }
-        renderOrbit(bboxParam, c)
+    // look for left hand
+    hands = findHands(predictions);
+    
+    if (hands.length > 0) {
+        // look for hand with x coord less than sun x coord
+        leftHandE = hands.find(h => h.bbox && h.bbox[0] < sunX)
     }
-}
+    
+    if (leftHandE == null) {
+        renderHelperText(helperText.raiseLeft)
+    } else {
+        renderHelperText(helperText.moveLeft)
+    }
 
-/**
- * Draw a yellow circle of the face detected
- * 
- * @param {} bbox 
- */
- function renderSun(bbox) {
-    sun = calcBboxCenter(bbox)
-    sunX = sun[0]
-    sunY = sun[1]
+    // clear out leftHand if it ends up moving past sun
+    if (leftHandE && leftHandE.bbox && leftHandE.bbox[0] > sunX - sunWidth) {
+        leftHandE = null
+    }
 
-    // sun on face
-    context.fillStyle = "yellow";
-    context.beginPath();
-    context.arc(sunX, sunY, 50, 0, 2 * Math.PI);
-    context.closePath()
-    context.fill();
+    if (leftHandE) {
+        renderOrbitEccentricity(leftHandE.bbox)
+    }
 }
 
 /**
  * Draw an orbit based on the LEFT hand position
  * 
- * @param {} bbox 
- * @param {CycleParam} c - can be 'e' or 'p'
+ * @param {Array} bbox - bounding box of left hand
  */
-function renderOrbit(bbox, c) {
-    x = bbox[0]
-    y = bbox[1]
-    isEccentricity = c == CycleParams.e
-    xRadius = 300
-    yRadius = 100
+ function renderOrbitEccentricity(bbox) {
+    earthCenterForOrbit = calcBboxCenter(bbox)
+    earthX = earthCenterForOrbit[0]
+    earthY = earthCenterForOrbit[1]
+    earthWidth = bbox[2]
+    
+    minimumOrbitRadius = sunWidth;
+    xRadius = minimumOrbitRadius;
+    yRadius = 75;
 
-    // if sun face exists
-    if (sunX && sunY) {
+    // if sun exists and left hand exists
+    if (sunX && sunY && leftHandE) {
+        // change x radius (width) based on distance from sun's x to earth's x
+        // but don't let it go lower than the minimum orbit radius
+        xRadius = ((sunX + minimumOrbitRadius) - earthX) / 2
 
-        // if eccentricity, change ellipse width based on bbox x coordinate
-        // TODO: Scale 250 distance so that it works better when person is further away
-        // also ellipse x below probably needs to be updated
-        if (isEccentricity) {
-            xRadius = 250 - bbox[0];
-            // never let xRadius go negative
-            xRadius = xRadius > 0 ? xRadius : 0;
+        // center of orbit needs to be off-center
+        centerX = xRadius + earthX
+        centerY = sunY
+
+        drawRedEllipse(centerX, centerY, xRadius, yRadius);
+
+        // Calculate distance between hand and face
+        // this will make the ice melt based on how far earth is from sun
+        distSunToEarth = calcDistance(sunX, sunY, earthX, earthY)
+
+        // divide by 3 here so that ice growth is more drastic
+        percentScale = (canvas.width / 3 - distSunToEarth) / (canvas.width / 3)
+
+        // change y so that the Earth stays on the orbit
+        // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
+        bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
+        renderEarth(bbox, .2, percentScale)
+    }
+}
+
+/**
+ * Draws a red ellipse on the canvas - used by eccentricity & precession
+ * 
+ * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
+ * params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
+ */
+function drawRedEllipse(x, y, xRadius, yRadius) {
+    // Draw the ellipse
+    context.strokeStyle = "red";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.ellipse(x, y, xRadius, yRadius, 0, 0, 2 * Math.PI);
+    context.stroke();
+    context.closePath()
+    context.lineWidth = 0;
+}
+
+/**
+ * Allow user to move the summer equinox position
+ * by raising their left or right hand
+ * 
+ * @param {Array} predictions
+ */
+function renderPerihelionInteraction(predictions) {
+    renderHelperText(helperText.chooseOneHand);
+
+    // if face detected, render sun there
+    face = predictions.find(p => p.label == 'face');
+    if (face && face.bbox) {
+        renderSun(face.bbox);
+    }
+
+    hands = findHands(predictions);
+    
+    if (hands.length > 0) {
+        // left: look for hand with x coord less than sun x coord
+        leftHandP = hands.find(h => h.bbox && h.bbox[0] < sunX);
+
+        // right: look for hand with x coord greater than sun x coord
+        rightHandP = hands.find(h => h.bbox && h.bbox[0] > sunX);
+    }
+    
+    // instruct user to raise one hand 
+    if (leftHandP == null && rightHandP == null) {
+        renderHelperText(helperText.chooseOneHand);
+    }
+
+    renderOrbitP(leftHandP ? leftHandP.bbox : null, rightHandP ? rightHandP.bbox : null)
+}
+
+/**
+ * Draw a yellow circle on the face detected
+ * 
+ * @param {Array} bbox 
+ */
+ function renderSun(bbox) {
+    sun = calcBboxCenter(bbox)
+    sunX = sun[0]
+    sunY = sun[1]
+    sunWidth = bbox[2]
+
+    // sun on face
+    context.fillStyle = "yellow";
+    context.beginPath();
+    context.arc(sunX, sunY, sunWidth / 2, 0, 2 * Math.PI);
+    context.closePath()
+    context.fill();
+}
+
+/**
+ * Draw an orbit and Earth for Precession
+ * Earth position is based on whether the left or the right hand is up
+ * 
+ * @param {Array or null} left - bounding box of left hand
+ * @param {Array or null} right - bounding box of left hand
+ */
+function renderOrbitP(left, right) {
+    // decide if Earth should go on left-hand side or right-hand side of sun
+    const Choices = {
+        left: 'l',
+        right: 'r',
+        none: 'n'
+    }
+
+    let choice = Choices.none;
+
+    if (left && right) {
+        // if left higher up than right, choose left
+        // note that y position grows as it moves DOWN the screen
+        if (left[1] > right[1]) {
+            choice = Choices.right;
+        } else {
+            choice = Choices.left;
         }
+    } else if (left) {
+        choice = Choices.left;
+    } else if (right) {
+        choice = Choices.right;
+    }
 
+    // show appropriate helper text about summer equinox position
+    textToShow = (choice == Choices.left) ? helperText.summerApi : 
+        (choice == Choices.right) ? helperText.summerPeri : 
+        helperText.chooseOneHand;
+    renderHelperText(textToShow);
+    
+    // default orbit for precession
+    xRadius = 200;
+    yRadius = 75;
+
+    // if sun exists
+    if (sunX && sunY) {
         centerX = sunX - 50
         centerY = sunY
 
-        // Draw the ellipse
-        context.strokeStyle = "red";
-        context.lineWidth = 1;
-        context.beginPath();
-        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
-        // params are: x, y, radiusX, radiusY, rotation, startAngle, endAngle
-        context.ellipse(centerX, centerY, xRadius, yRadius, 0, 0, 2 * Math.PI);
-        context.stroke();
-        context.closePath()
-        context.lineWidth = 0;
+        // draw orbit
+        drawRedEllipse(centerX, centerY, xRadius, yRadius)
 
-        // Calculate distance between hand and face
-        // For eccentricity, this will make the ice melt based on how far earth is from sun
-        // For precession, we will use this to move earth along the orbital path
-        distSunToEarth = calcDistance(sunX, sunY, x, y)
-        //todo: check numbers... what is maximum?
-        percentScale = (500 - distSunToEarth) / 500
+        // if left: 0%, if right: 100%, else 50%
+        percentScale = (choice == Choices.left) ? 0 : (choice == Choices.right) ? 1 : .5;
 
-        // ECCENTRICITY: hand stretches orbit width
-        if (isEccentricity) {
-            // change y so that the Earth stays on the orbit
-            bbox[1] = centerY + yRadius * Math.sin(0) - (bbox[3] / 2)
-            renderEarth(bbox, .2, percentScale)
-        } else if (x > 0) {
-            // this is how far left hand is from center on a percentage
-            handDistFromCenter = (250 - x)/250
+        // normalize distance to 0-180 (corresponds to position on ellipse)
+        positionOnEllipse = calculateRadians(percentScale, Math.PI, 2 * Math.PI)
 
-            // PRECESSION: hand moves NH summer location on orbit
-            // normalize distance to 0-180 (corresponds to position on ellipse)
-            positionOnEllipse = calculateRadians(handDistFromCenter, Math.PI, 2 * Math.PI)
-            console.log(positionOnEllipse)
+        // set up bbox for earth
+        bbox = [0, 0, 100, 100]
 
-            // adjust bbox so that x, y of Earth moves across orbit
-            // based on left hand position
-            // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
-            bbox[0] = centerX + xRadius * Math.cos(positionOnEllipse) - (bbox[2] / 2)
-            bbox[1] = centerY + yRadius * Math.sin(positionOnEllipse) - (bbox[3] / 2)
+        // adjust x, y so that Earth is on the orbit path
+        // https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
+        bbox[0] = centerX + xRadius * Math.cos(positionOnEllipse) - (bbox[2] / 2)
+        bbox[1] = centerY + yRadius * Math.sin(positionOnEllipse) - (bbox[3] / 2)
 
-            // adjust angle so that Earth's axis is pointed towards sun (NH summer)
-            adjustedAngle = calculateRadians(handDistFromCenter, -.2, .2, true)
+        // adjust angle so that Earth's axis is pointed towards sun (NH summer)
+        adjustedAngle = calculateRadians(percentScale, -.2, .2, true)
 
-            renderEarth(bbox, adjustedAngle, handDistFromCenter)
-        }
+        renderEarth(bbox, adjustedAngle, percentScale)
     }
 }
 
@@ -260,7 +368,7 @@ function renderOrbit(bbox, c) {
  */
 function renderObliquity(predictions) {
     // find all hands
-    hands = predictions.filter(p => handLabels.includes(p.label))
+    hands = findHands(predictions)
     face = predictions.find(p => p.label == 'face')
 
     angle = 0
@@ -280,8 +388,6 @@ function renderObliquity(predictions) {
 
         renderSunAcrossEarth(face.bbox)
         context.restore()
-
-        renderAngleDisplay(globalObliquityAngle)
     }
 }
 
@@ -297,16 +403,6 @@ function renderSunAcrossEarth(bbox) {
     context.arc(600, calcBboxCenter(bbox)[1], 50, 0, 2 * Math.PI);
     context.closePath()
     context.fill()
-}
-
-/**
- * Show the user the degrees they are rotating the Earth's axis
- * 
- * @param {number} angle 
- */
-function renderAngleDisplay(angle) {
-    context.fillStyle = 'white';
-    context.fillText("You are tilting Earth's axis by " + angle + "degrees", 10, 50);
 }
 
 /**
@@ -366,18 +462,19 @@ function calculateObliquityAngle(hand1, hand2) {
  * @param {number} scalePercent - percentge to scale the ice cap by
  */
 function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
-    earthCenter = calcBboxCenter(bbox)
-    earthX = earthCenter[0]
-    earthY = earthCenter[1]
+    earthCenter = calcBboxCenter(bbox);
+    earthX = earthCenter[0];
+    earthY = earthCenter[1];
+    bboxWidth = bbox[2];
 
-    width = bbox[2]
-    height = width * heightScale
+    width = bboxWidth;
+    height = width * heightScale;
 
     //      translate to center of bbox
 
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
-    context.translate(earthX, earthY)
-    context.rotate(angle)
+    context.translate(earthX, earthY);
+    context.rotate(angle);
 
     //      Draw Earth image on bbox
 
@@ -408,6 +505,16 @@ function renderEarth(bbox, angle, scalePercent=(angle/angleMax)) {
  *      HELPER FUNCTIONS
  * 
  */
+
+/**
+ * Find all of the hands detected, with a score of 75% accuracy or higher
+ * 
+ * @param {Array} predictions list of predictions to search through
+ * @returns 
+ */
+function findHands(predictions) {
+    return predictions.filter(p => handLabels.includes(p.label) && p.score > .75)
+}
 
 function calcDistance(x1, y1, x2, y2) {
     const a = x1 - x2;
