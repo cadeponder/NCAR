@@ -15,7 +15,7 @@ let leftHandP = null;
 let rightHandP = null;
 
 const helperText = {
-    raiseLeft: "Raise your left hand",
+    raiseLeft: "Move left hand side to side to adjust eccentricity",
     moveLeft: "Move your left hand to cover the Earth with more ice",
     chooseOneHand: "Raise left or right hand to set summer equinox position",
     summerPeri: "Summer equinox is in Perihelion",
@@ -32,14 +32,11 @@ const helperText = {
     eWinBottom: "Eccentricity set to ice age conditions",
     pWinBottom: "Summer equinox set to ice age conditions",
     oWinBottom: "Obliquity set to ice age conditions",
-    introScreen: `The Last Glacial Maximum (LGM) was the most recent time during the Last Glacial 
-    Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern 
-    North America, Northern Europe, and Asia and profoundly affected Earth's climate.
+    introScreen: `Why do ice ages happen? Changes in the Earth's orbit and positon over long periods of time are part of the cause.
     
-    Your goal: cover the Earth with ice sheets by moving its position
-
-    You will adjust the Earth's position with your hands
-
+    Your goal: cover the Earth with ice sheets by moving it into the Last Glacial Maximum
+    using your hands
+    
     Raise both hands to start
     `,
 }
@@ -52,16 +49,18 @@ let startedPTimer = false;
 let shownOOverlay = false;
 let startedOTimer = false;
 
+let overlayPresent = false;
+let allowProceed = false;
+
 /**
  *      TIMING / WIN CONTROLS
  */
 // how many ms to show overlay before allowing user interaction
-const overlayTimeLimit = 5000;
+const overlayTimeLimit = 30 * 1000;
 
  // all win conditions will only start to check after 10 seconds on that cycle
-const winTimerLimitMinutes = 2;
-const winTimerLimit = 1000; // just for dev REMOVE THIS LINE AND UNCOMMENT ONE BELOW IT
-// const winTimerLimit = winTimerLimitMinutes * 60 * 1000; // wait this amount of ms before user can win
+// const winTimerLimit = 1000; // just for dev COMMENT OUT THIS LINE AND UNCOMMENT ONE BELOW IT
+const winTimerLimit = 10 * 1000; // wait this amount of ms before user can win
 const winTransitionTimer = 5000; // ms time to show win message over canvas
 let startedWinTimer = false;
 let shouldCheckWin = false;
@@ -101,7 +100,9 @@ const earthImageHeight = earthImageWidth * heightScale;
 const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
 
-const eOverlay = new Image(640, 480);
+const overlayImageWidth = 640 * .75;
+const overlayImageHeight = 480 * .75;
+const eOverlay = new Image(overlayImageWidth, overlayImageHeight);
 eOverlay.src = "img/eOverlay.png";
 
 const pOverlay = new Image(640, 480);
@@ -112,6 +113,10 @@ oOverlay.src = "img/oOverlay.png";
 
 const introOverlay = new Image(640, 480);
 introOverlay.src = "img/introOverlay.png";
+
+const handSize = 100;
+const handImage = new Image(handSize, handSize)
+handImage.src = "img/hand.png"
 
 let globalObliquityAngle = 0
 const angleMax = .75
@@ -241,7 +246,12 @@ function runDetection() {
             // Intro page
             if (cycleParam == null) {
                 showText(helperText.introScreen);
-                detectBothHands(predictions);
+                // Proceed after raise hands
+                detectBothHands(predictions, () => {
+                    hideText();
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    changePage();
+                });
             }
 
             // Eccentricity
@@ -285,13 +295,46 @@ function runDetection() {
     }
 }
 
-function detectBothHands(predictions) {
+/**
+ * If two or more hands present, call callback function
+ * 
+ * @param {*} predictions 
+ * @param {*} callback 
+ */
+function detectBothHands(predictions, callback) {
     hands = findHands(predictions);
     
-    if (hands.length >= 2) {
-        hideText();
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        changePage();
+    if (hands.length >= 2) {        
+        callback();
+    }
+}
+
+/**
+ * If hand present and it is in lower-right corner, call callback
+ * 
+ * @param {*} predictions 
+ * @param {*} callback 
+ */
+function detectHandInCorner(predictions, callback) {
+    hands = findHands(predictions);
+    cornerThreshold = .75;
+    
+    if (hands.length > 0) {
+        // find hand in top 90% of canvas height & width (lower right corner)
+        handInCorner = hands.find((h) => {
+            if (h.bbox) {
+                center = calcBboxCenter(h.bbox);
+                if (center[0] > canvas.width * cornerThreshold &&
+                    center[1] > canvas.height * cornerThreshold) {
+                        return true;
+                    }
+            }
+
+            return false;
+        });
+        if (handInCorner) {
+            callback();
+        }
     }
 }
 
@@ -304,18 +347,27 @@ function detectBothHands(predictions) {
  * @param {Image} overlayImg - overlay image to show
  * @param {function} cycleFunctionCallback - eg. renderEccentricity, renderObliquity
  * @param {Object} predictions - the model predictions to pass to cycleFunctionCallback
+ * @param {Function} callback - function to call once 2 hands are detected
  */
 function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunctionCallback, predictions) {
     if (!shownOverlay) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
-
+        overlayPresent = true;
+        context.drawImage(overlayImg, 0, 0, overlayImageWidth, overlayImageHeight);
+        
         if (!startedTimer) {
+            allowProceed = false;
             resetConditionsPageChange();
-            overlayTimeout = setTimeout(clearOverlay, overlayTimeLimit);
+            overlayTimeout = setTimeout(() => {
+                allowProceed = true; 
+            }, 3000);
         }
     } else {
         cycleFunctionCallback(predictions);
+    }
+
+    if (overlayPresent && allowProceed) {
+        context.drawImage(handImage, canvas.width - handSize, canvas.height - handSize, handSize, handSize);
+        detectHandInCorner(predictions, clearOverlay);
     }
 }
 
@@ -353,7 +405,10 @@ function clearOverlay() {
         shownOOverlay = true;
     }
 
+    clearTimeout(overlayTimeout);
     context.clearRect(0, 0, canvas.width, canvas.height);
+
+    overlayPresent = false;
 }
 
 /**
@@ -418,8 +473,6 @@ function renderEccentricity(predictions) {
         if (leftHandE == null) {
             renderHelperText(helperText.raiseLeft)
         } else {
-            // remove overlay
-            shownEOverlay = true;
             renderHelperText(helperText.moveLeft)
         }
     }
