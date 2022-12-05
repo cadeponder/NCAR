@@ -10,7 +10,7 @@ p {
     font-weight: 600;
 }
 #helper-text {
-  font-size: 30pt;
+  font-size: 28pt;
 }
 body {
     text-align: left;
@@ -43,7 +43,8 @@ height: auto;
   grid-area: feedback; 
   height: 5vh;
   /* margin-bottom: 10vh; */
-  margin-top: -20vh;
+  margin-top: -24vh;
+  z-index: 10000;
 }
 
 #header { 
@@ -74,15 +75,21 @@ height: auto;
   grid-area: progress; 
   display: flex;
   flex-direction: row;
-  height: 15vh;
-  margin-top: -8vh;
+  height: 5vh;
+  margin-top: -16vh;
+  /* background: blue; */
 }
 #progress> div> {
-  width: 30%;
   /* height: 10vh */
+  width: 33%;
+}
+#progress #eccProg, #precProg, #obProg {
+  width: 33%;
+  /* height: 30%; */
 }
 #progress> div> img {
-  width: 100%;
+  width: 75%;
+  /* height: 99%; */
 }
 
 #text-over-video {
