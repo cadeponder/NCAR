@@ -16,13 +16,13 @@
 <!-- JS LIBRARY -->
 <link rel="stylesheet" href="https://unpkg.com/carbon-components@latest/css/carbon-components.css" />
 </head>
-<body class="box--body p20" onload="toggleVideo(!isVideo)">
+<body class="box--body p20" onload="toggleVideo(!isVideo)" background="gifs/snow.gif">
     <div class="grid-container">
       <div id="feedback"><p id="helper-text"></p></div>
 
       <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
         <!-- get rid of button when movement based 'yes' made -->
-        <button>YES</button></div>
+        <button>NEXT</button></div>
         
       <div id="edMedia"><img id="img" src="img/lgm.jpg" alt=""></div>  
       <div id="edText"><p>The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.</p></div>
@@ -57,7 +57,8 @@
         const feedback = document.getElementById('feedback'); 
         const progress = document.getElementById("progress");
         const precProg = document.getElementById("precProg");
-        const obProg = document.getElementById(obProg);
+        const obProg = document.getElementById("obProg");
+        const interaction = document.getElementById('interaction');
         // const progressBar = document.getElementById('progress'); 
         const btn = document.querySelector("button");
         const pageGrid = document.getElementsByClassName('grid-container-home');
@@ -65,6 +66,7 @@
         img.style.width = "100%";
         feedback.style.visibility = 'hidden';
         progress.style.visibility = 'hidden';
+        edMedia.style.background = 'none';
         if (header.
             textContent = "Ready to Embody an Ice Age?") {
               edText.textContent = "The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.";
@@ -74,9 +76,6 @@
            
 
         function changePage(){
-            // location.replace("obliquity.html")
-      // FOR SWITCHING FROM INDEX   
-         
             if (header.
             textContent == "Ready to Embody an Ice Age?"){
               resetConditionsPageChange();
@@ -87,7 +86,7 @@
               edMedia.style.visibility = 'visible';
               feedback.style.visibility = 'visible';
               img.style.width = "80%";
-              // unhides extra content hidden on index
+              edMedia.style.background = 'black';
               resetConditionsPageChange();
             }
            else if (header.
@@ -98,10 +97,9 @@
               edText.textContent = "Precession is when the axis of the Earth changes its direction like how a top wobbles when it spins. Procession changes the point in the Earth's orbit at which each season (Fall, Winter, Spring, Summer) occurs. During the last ice age, the procession of the Earth made it so the northern summer was when the Earth was furthest from the Sun.";
               img.src = 'gifs/precession.gif';
               progress.style.visibility = 'visible';
-
-              console.log("eccentricity->precession");
+              precProg.style.visibility = 'hidden';
+              obProg.style.visibility = 'hidden';
               resetConditionsPageChange();
-              // unhides extra content hidden on index
             }
             else if (header.
             textContent == 'Precession'){
@@ -110,16 +108,17 @@
               header.textContent = 'Obliquity';
               edText.textContent = "Obliquity is the tilt of the Earth's axis. Low obliquity means a shallow tilt, making the axis more vertical. When obliquity is low, less sunlight from space reaches land of the northern hemisphere. During the last ice age, the Earth had low obliquity.";
               img.src = 'gifs/obliquity.gif';
-              console.log("precession->obliquity");
-              // unhides extra content hidden on index
+              precProg.style.visibility = 'visible';
             }
             else if (header.
             textContent == 'Obliquity'){
               header.textContent = "You did it!";
               img.src = 'gifs/obliquity.gif';
-              console.log("final page");
-              // unhides extra content hidden on index
-
+              obProg.style.visibility = 'visible';
+              interaction.style.visibility = 'hidden';
+              feedback.style.visibility = 'hidden';
+              edMedia.style.marginLeft = '50%';
+              edMedia.style.marginRight = '50%';
               allowRestart();
             }
            

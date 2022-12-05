@@ -12,6 +12,8 @@ p {
 body {
     text-align: left;
     margin-top: 15px;
+    /* background-image: 'gifs/snow.gif'; */
+    /* background: black; */
 }
 #img {
   width: 80%;
@@ -94,7 +96,7 @@ height: auto;
 }
 
 .grid-container> div {
-  background-color: tan;
+  /* background-color: tan; */
   text-align: left;
   font-size: 30px;
   width: 45vw;
