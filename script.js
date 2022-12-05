@@ -31,7 +31,17 @@ const helperText = {
     oTooHigh: "Not tilted enough",
     eWinBottom: "Eccentricity set to ice age conditions",
     pWinBottom: "Summer equinox set to ice age conditions",
-    oWinBottom: "Obliquity set to ice age conditions"
+    oWinBottom: "Obliquity set to ice age conditions",
+    introScreen: `The Last Glacial Maximum (LGM) was the most recent time during the Last Glacial 
+    Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern 
+    North America, Northern Europe, and Asia and profoundly affected Earth's climate.
+    
+    Your goal: cover the Earth with ice sheets by moving its position
+
+    You will adjust the Earth's position with your hands
+
+    Raise both hands to start
+    `,
 }
 
 // booleans for tracking help image overlays
@@ -49,7 +59,9 @@ let startedOTimer = false;
 const overlayTimeLimit = 5000;
 
  // all win conditions will only start to check after 10 seconds on that cycle
-const winTimerLimit = 10000; 
+const winTimerLimitMinutes = 2;
+const winTimerLimit = 1000; // just for dev REMOVE THIS LINE AND UNCOMMENT ONE BELOW IT
+// const winTimerLimit = winTimerLimitMinutes * 60 * 1000; // wait this amount of ms before user can win
 const winTransitionTimer = 5000; // ms time to show win message over canvas
 let startedWinTimer = false;
 let shouldCheckWin = false;
@@ -132,10 +144,14 @@ const Choices = {
 
 let choice = Choices.none;
 
+let textContainer = null;
+
 /**
  * Starts the webcam video and runs detection
  */
 function startVideo() {
+    textContainer = document.getElementById("text-over-video");
+
     handTrack.startVideo(video).then(function (status) {
         if (status) {
             isVideo = true
@@ -187,6 +203,17 @@ function reloadPage() {
     location.reload();
 }
 
+function showText(text) {
+    if (!textContainer.classList.contains("showing")) {
+        textContainer.innerText = text;
+        textContainer.classList.add('showing');
+    }
+}
+
+function hideText() {
+    textContainer.classList.remove('showing');
+}
+
 /**
  * runs detect on the model, giving predictions for what the webcam sees with an array:
  * # array of predicted matches for faces and hands
@@ -213,7 +240,7 @@ function runDetection() {
 
             // Intro page
             if (cycleParam == null) {
-                context.drawImage(introOverlay, 0, 0, canvas.width, canvas.height);
+                showText(helperText.introScreen);
                 detectBothHands(predictions);
             }
 
@@ -253,7 +280,7 @@ function runDetection() {
         });
     } else {
         // prompt user to start their video
-        homeHelperText = document.getElementById('edText');
+        let homeHelperText = document.getElementById('edText');
         homeHelperText.textContent = helperText.pause;
     }
 }
@@ -262,6 +289,7 @@ function detectBothHands(predictions) {
     hands = findHands(predictions);
     
     if (hands.length >= 2) {
+        hideText();
         context.clearRect(0, 0, canvas.width, canvas.height);
         changePage();
     }

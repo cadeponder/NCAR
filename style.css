@@ -81,6 +81,21 @@ height: auto;
 #progress> div> img {
   width: 100%;
 }
+
+#text-over-video {
+  display: none;
+}
+
+/* this shows text over the video */
+#text-over-video.showing {
+  display: block;
+  position: absolute;
+  top: 10px;
+  background-color: white;
+  width: 650px;
+  height: 500px;
+}
+
 .grid-container {
   display: grid;
   grid-template-areas:
