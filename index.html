@@ -22,7 +22,8 @@
 
       <div id="header"><h1 id="headerTxt">Ready to Embody an Ice Age?</h1>
         <!-- get rid of button when movement based 'yes' made -->
-        <button>NEXT</button></div>
+        <div id="next-button"><button>NEXT</button></div>
+      </div>
         
       <div id="edMedia"><img id="img" src="img/lgm.jpg" alt=""></div>  
       <div id="edText"><p></p></div>
@@ -119,6 +120,8 @@
               feedback.style.visibility = 'hidden';
               edMedia.style.marginLeft = '50%';
               edMedia.style.marginRight = '50%';
+              edText.style.visibility = 'hidden';
+              progress.style.visibility = 'hidden';
               allowRestart();
             }
            
