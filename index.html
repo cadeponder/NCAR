@@ -49,11 +49,6 @@
   <script src="handtrack.js"></script>
   <!-- 8.8 sec -->
   <script src="script.js"></script>
-  <!-- AUTO LOAD INTERACTION -->
-  <!-- <script>
-    window.onload = toggleVideo(!isVideo);
-  </script> -->
-    <!-- BUTTON -->
     <script>
         const header = document.getElementById('headerTxt');
         const edText = document.getElementById('edText');
@@ -61,21 +56,20 @@
         const img = document.getElementById('img'); 
         const feedback = document.getElementById('feedback'); 
         const progress = document.getElementById("progress");
-        const precProg = document.getElementById(precProg);
+        const precProg = document.getElementById("precProg");
         const obProg = document.getElementById(obProg);
         // const progressBar = document.getElementById('progress'); 
         const btn = document.querySelector("button");
         const pageGrid = document.getElementsByClassName('grid-container-home');
         btn.addEventListener("click", changePage);
-
+        img.style.width = "100%";
+        feedback.style.visibility = 'hidden';
+        progress.style.visibility = 'hidden';
         if (header.
             textContent = "Ready to Embody an Ice Age?") {
               edText.textContent = "The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.";
-              feedback.style.visibility = 'hidden';
-              progress.style.visibility = 'hidden';
               img.src = 'img/lgm.jpg';
-              img.style.width = "100%";
-              // normalGrid[0].className = 'grid-container-home';
+              img.style.width = '100%';
             }
            
 
@@ -90,7 +84,6 @@
               header.textContent = 'Eccentricity';
               edText.textContent = "Eccentricity determines how close to a circle the Earth's orbit is. It causes the distance between the Earth and the Sun to change throughout the year. This change in distance does not control the seasons, but assists in altering Earth's temperature during ice ages. During the last ice age, the Earth had a high eccentricity, causing it to be far from the Sun during part of its orbit.";
               img.src = 'gifs/eccentricity.gif';
-              // pageGrid[0].className = 'grid-container';
               edMedia.style.visibility = 'visible';
               feedback.style.visibility = 'visible';
               img.style.width = "80%";
@@ -131,12 +124,6 @@
             }
            
         }
-
-        // function pageContent () {
-        //   const feedback = document.getElementsByClassName(feedbback);
-        //   const headerText = document.getElementsByClassName(header);
-        //   const edMedia = document.getElementsByClassName(edMedia);
-        // }
     </script>
 </body>
 </html>
