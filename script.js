@@ -15,36 +15,29 @@ let leftHandP = null;
 let rightHandP = null;
 
 const helperText = {
-    raiseLeft: "Raise your left hand",
-    moveLeft: "Move your left hand to cover the Earth with more ice",
-    chooseOneHand: "Raise left or right hand to set summer equinox position",
+    eMoveHandTimed: "Move the Earth with left hand - how does it change the ice cover?",
+    oMoveHandTimed: "Adjust tilt angle - how does it change the ice cover?",
+    raiseHands: "Raise both hands to adjust angle",
+    chooseOneHand: "Point left or right hand to set summer equinox position",
     summerPeri: "Summer equinox is in Perihelion",
     summerApi: "Summer equinox is in Apihelion",
-    obliquity: "Raise both hands to tilt the Earth",
+    obliquity: "Raise/lower hands to tilt the Earth",
     pause: "Waiting for model to load...",
     eWin: "by changing eccentricity",
     pWin: "by putting the summer equinox in Apihelion",
     oWin: "by tilting the Earth to 22.1 degrees",
-    eTooHigh: "Too wide. Make the orbit less eccentric",
-    eTooLow: "Not wide enough. Make the orbit more eccentric",
-    oTooLow: "Tilted too far",
-    oTooHigh: "Not tilted enough",
-    eWinBottom: "Eccentricity set to ice age conditions",
-    pWinBottom: "Summer equinox set to ice age conditions",
-    oWinBottom: "Obliquity set to ice age conditions",
-    introScreen: `The Last Glacial Maximum (LGM) was the most recent time during the Last Glacial 
-    Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern 
-    North America, Northern Europe, and Asia and profoundly affected Earth's climate.
-    
-    Your goal: cover the Earth with ice sheets by moving its position
-
-    You will adjust the Earth's position with your hands
-
-    Raise both hands to start
-    `,
+    eTooHigh: "Now cause the ice age. Status: Too far",
+    eTooLow: "Now cause the ice age. Status: Not far enough",
+    oTooLow: "Now cause the ice age. Status: Too far",
+    oTooHigh: "Now cause the ice age. Status: Not far enough",
+    eWinBottom: "Eccentricity set to minimize ice melt",
+    pWinBottom: "Summer equinox set to minimize ice melt",
+    oWinBottom: "Obliquity set to minimize ice melt"
 }
 
 // booleans for tracking help image overlays
+let shownIOverlay = false; // intro overlay
+let startedITimer = false;
 let shownEOverlay = false;
 let startedETimer = false;
 let shownPOverlay = false;
@@ -52,18 +45,17 @@ let startedPTimer = false;
 let shownOOverlay = false;
 let startedOTimer = false;
 
+let overlayPresent = false;
+let allowProceed = false;
+
 /**
  *      TIMING / WIN CONTROLS
  */
-// how many ms to show overlay before allowing user interaction
-const overlayTimeLimit = 5000;
 
  // all win conditions will only start to check after 10 seconds on that cycle
-const winTimerLimitMinutes = 2;
-const winTimerLimit = 1000; // just for dev REMOVE THIS LINE AND UNCOMMENT ONE BELOW IT
-// const winTimerLimit = winTimerLimitMinutes * 60 * 1000; // wait this amount of ms before user can win
+// const winTimerLimit = 1000; // just for dev COMMENT OUT THIS LINE AND UNCOMMENT ONE BELOW IT
+const winTimerLimit = 10 * 1000; // wait this amount of ms before user can win
 const winTransitionTimer = 5000; // ms time to show win message over canvas
-let startedWinTimer = false;
 let shouldCheckWin = false;
 let changedPageAfterWin = false;
 
@@ -80,12 +72,12 @@ let pWon = false; // switch if they win
 
 // oblquity angle must be += oWinRange from this oWin value to win
 let oWin = .25; // use let so that we change oWin to exact angle once user gets it
-const oWinRange = .05;
+const oWinRange = .02;
 let oWon = false; // switch if they win
 
 // these are so we can manually clear timeouts on page transitions
 let winTimeout = null;
-let overlayTimeout = null;
+let allowProceedTimeout = null;
 let winTransitionTimeout = null;
 
 
@@ -101,17 +93,23 @@ const earthImageHeight = earthImageWidth * heightScale;
 const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
 
-const eOverlay = new Image(640, 480);
+const overlayImageWidth = 640 * .85;
+const overlayImageHeight = 480 * .85;
+const eOverlay = new Image(overlayImageWidth, overlayImageHeight);
 eOverlay.src = "img/eOverlay.png";
 
-const pOverlay = new Image(640, 480);
+const pOverlay = new Image(overlayImageWidth, overlayImageHeight);
 pOverlay.src = "img/pOverlay.png";
 
-const oOverlay = new Image(640, 480);
+const oOverlay = new Image(overlayImageWidth, overlayImageHeight);
 oOverlay.src = "img/oOverlay.png";
 
-const introOverlay = new Image(640, 480);
+const introOverlay = new Image(overlayImageWidth, overlayImageHeight);
 introOverlay.src = "img/introOverlay.png";
+
+const handSize = 100;
+const handImage = new Image(handSize, handSize)
+handImage.src = "img/hand.png"
 
 let globalObliquityAngle = 0
 const angleMax = .75
@@ -240,8 +238,8 @@ function runDetection() {
 
             // Intro page
             if (cycleParam == null) {
-                showText(helperText.introScreen);
-                detectBothHands(predictions);
+                callCycleFunction(shownIOverlay, introOverlay, startedITimer, () => {}, predictions);
+                startedITimer = true;
             }
 
             // Eccentricity
@@ -285,13 +283,46 @@ function runDetection() {
     }
 }
 
-function detectBothHands(predictions) {
+/**
+ * If two or more hands present, call callback function
+ * 
+ * @param {*} predictions 
+ * @param {*} callback 
+ */
+function detectBothHands(predictions, callback) {
     hands = findHands(predictions);
     
-    if (hands.length >= 2) {
-        hideText();
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        changePage();
+    if (hands.length >= 2) {        
+        callback();
+    }
+}
+
+/**
+ * If hand present and it is in lower-right corner, call callback
+ * 
+ * @param {*} predictions 
+ * @param {*} callback 
+ */
+function detectHandInCorner(predictions, callback) {
+    hands = findHands(predictions);
+    cornerThreshold = .75;
+    
+    if (hands.length > 0) {
+        // find hand in top 90% of canvas height & width (lower right corner)
+        handInCorner = hands.find((h) => {
+            if (h.bbox) {
+                center = calcBboxCenter(h.bbox);
+                if (center[0] > canvas.width * cornerThreshold &&
+                    center[1] > canvas.height * cornerThreshold) {
+                        return true;
+                    }
+            }
+
+            return false;
+        });
+        if (handInCorner) {
+            callback();
+        }
     }
 }
 
@@ -304,18 +335,34 @@ function detectBothHands(predictions) {
  * @param {Image} overlayImg - overlay image to show
  * @param {function} cycleFunctionCallback - eg. renderEccentricity, renderObliquity
  * @param {Object} predictions - the model predictions to pass to cycleFunctionCallback
+ * @param {Function} callback - function to call once 2 hands are detected
  */
 function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunctionCallback, predictions) {
     if (!shownOverlay) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
-
+        overlayPresent = true;
+        context.drawImage(overlayImg, 0, 0, overlayImageWidth, overlayImageHeight);
+        
         if (!startedTimer) {
+            allowProceed = false;
             resetConditionsPageChange();
-            overlayTimeout = setTimeout(clearOverlay, overlayTimeLimit);
+            allowProceedTimeout = setTimeout(() => {
+                allowProceed = true; 
+            }, 8000);
         }
     } else {
         cycleFunctionCallback(predictions);
+    }
+
+    if (overlayPresent && allowProceed) {
+        context.drawImage(handImage, canvas.width - handSize, canvas.height - handSize, handSize, handSize);
+        if (cycleParam == null) { // intro case
+            detectHandInCorner(predictions, () => {
+                clearOverlay();
+                changePage();
+            });
+        } else {
+            detectHandInCorner(predictions, clearOverlay);
+        }
     }
 }
 
@@ -324,13 +371,12 @@ function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunction
  */
 function resetConditionsPageChange() {
     // reset all of the win condition booleans
-    startedWinTimer = false;
     shouldCheckWin = false;
     changedPageAfterWin = false;
 
     clearTimeout(winTimeout);
     clearTimeout(winTransitionTimeout);
-    clearTimeout(overlayTimeout);
+    clearTimeout(allowProceedTimeout);
 
     renderHelperText("");
 }
@@ -341,19 +387,26 @@ function resetConditionsPageChange() {
  * 
  */
 function clearOverlay() {
-    if (cycleParam == CycleParams.e) {
-        shownEOverlay = true;
+    switch (cycleParam) {
+        case CycleParams.e:
+            shownEOverlay = true;
+            break;
+        case CycleParams.p:
+            shownPOverlay = true;
+            break;
+        case CycleParams.o:
+            shownOOverlay = true;
+            break;
+        default:
+            shownIOverlay = true;            
     }
 
-    if (cycleParam == CycleParams.p) {
-        shownPOverlay = true;
-    }
-
-    if (cycleParam == CycleParams.o) {
-        shownOOverlay = true;
-    }
-
+    clearTimeout(allowProceedTimeout);
     context.clearRect(0, 0, canvas.width, canvas.height);
+
+    startWinTimer();
+
+    overlayPresent = false;
 }
 
 /**
@@ -396,10 +449,6 @@ function winTransition(text) {
  *      ECCENTRICITY 
  */
 function renderEccentricity(predictions) {
-    if (!startedWinTimer) {
-        startWinTimer();
-    }
-
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
@@ -415,13 +464,7 @@ function renderEccentricity(predictions) {
     }
     
     if (!shouldCheckWin) {
-        if (leftHandE == null) {
-            renderHelperText(helperText.raiseLeft)
-        } else {
-            // remove overlay
-            shownEOverlay = true;
-            renderHelperText(helperText.moveLeft)
-        }
+        renderHelperText(helperText.eMoveHandTimed);
     }
 
     // clear out leftHand if it ends up moving past sun
@@ -529,10 +572,10 @@ function renderPerihelionInteraction(predictions) {
     
     if (hands.length > 0) {
         // left: look for hand with x coord less than sun x coord
-        leftHandP = hands.find(h => h.bbox && h.bbox[0] < sunX);
+        leftHandP = hands.find(h => h.bbox && h.bbox[0] < sunX && h.label == 'point');
 
         // right: look for hand with x coord greater than sun x coord
-        rightHandP = hands.find(h => h.bbox && h.bbox[0] > sunX);
+        rightHandP = hands.find(h => h.bbox && h.bbox[0] > sunX && h.label == 'point');
     }
     
     // instruct user to raise one hand 
@@ -650,12 +693,6 @@ function renderOrbitP(left, right) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
-    if (!startedWinTimer) {
-        startWinTimer();
-    }
-
-    renderHelperText(helperText.obliquity)
-
     // find all hands
     hands = findHands(predictions)
     face = predictions.find(p => p.label == 'face')
@@ -692,6 +729,14 @@ function renderObliquity(predictions) {
                 oWon = true;
                 oWin = globalObliquityAngle;
                 renderHelperText(helperText.oWinBottom);
+            }
+        } else { // if user has only been on page for short amt: show helper text
+            if (hands.length < 2) {
+                // prompt to raise hands if 2 not found
+                renderHelperText(helperText.raiseHands);
+            } else {
+                // prompt to move & notice change
+                renderHelperText(helperText.oMoveHandTimed);
             }
         }
     }
