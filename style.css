@@ -121,16 +121,16 @@ button {
 }
 
 .grid-container {
-  padding-top: 230px;
   display: grid;
   grid-template-areas:
-    'header header header interaction interaction interaction'
-    'media media media interaction interaction interaction'
-    'edText edText edText feedback feedback feedback'
-    'edText edText edText progress progress progress';
+  'header header header interaction interaction interaction'
+  'media media media interaction interaction interaction'
+  'edText edText edText feedback feedback feedback'
+  'edText edText edText progress progress progress';
   gap: 10px;
   /* background-color: #2196F3; */
   padding: 10px;
+  padding-top: 130px;
   justify-content: space-around;
   height: 100vh;
 }
