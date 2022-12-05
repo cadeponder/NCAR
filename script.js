@@ -60,7 +60,7 @@ let shouldCheckWin = false;
 let changedPageAfterWin = false;
 
 // win conditions
-const eWin = 300; // distance from head to hand must be 300 px on canvas
+const eWin = 200; // distance from head to hand must be 300 px on canvas
 const eWinRange = 25; // +=25
 let eWinningDist = 0;
 let eWinningBbox = null;

@@ -121,6 +121,7 @@ button {
 }
 
 .grid-container {
+  padding-top: 230px;
   display: grid;
   grid-template-areas:
     'header header header interaction interaction interaction'
