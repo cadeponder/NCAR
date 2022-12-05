@@ -9,6 +9,9 @@ p {
     font-size: 24pt;
     font-weight: 600;
 }
+#helper-text {
+  font-size: 30pt;
+}
 body {
     text-align: left;
     margin-top: 15px;
