@@ -11,6 +11,7 @@ p {
 }
 #helper-text {
   font-size: 24pt;
+  color: red;
 }
 body {
     text-align: left;
@@ -129,8 +130,7 @@ button {
   'edText edText edText progress progress progress';
   gap: 10px;
   /* background-color: #2196F3; */
-  padding: 10px;
-  padding-top: 130px;
+  padding: 130px 10px 10px 10px;
   justify-content: space-around;
   height: 100vh;
 }

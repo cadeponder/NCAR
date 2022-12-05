@@ -30,9 +30,9 @@ const helperText = {
     eTooLow: "Now cause the ice age. Status: Not far enough",
     oTooLow: "Now cause the ice age. Status: Too far",
     oTooHigh: "Now cause the ice age. Status: Not far enough",
-    eWinBottom: "Eccentricity set to minimize ice melt",
-    pWinBottom: "Summer equinox set to minimize ice melt",
-    oWinBottom: "Obliquity set to minimize ice melt"
+    eWinBottom: "Eccentricity set to minimize ice melt! :) ",
+    pWinBottom: "Summer equinox set to minimize ice melt! :) ",
+    oWinBottom: "Obliquity set to minimize ice melt! :)"
 }
 
 // booleans for tracking help image overlays
@@ -431,7 +431,7 @@ function winTransition(text) {
     context.fillStyle = "white";
     context.rect(0, 0, canvas.width, 100);
     context.fill();
-    context.fillStyle = "black";
+    context.fillStyle = "purple";
     context.font = '32px serif';
     context.fillText("You just promoted an ice age", 10, 50);
     context.fillText(text, 10, 80);
