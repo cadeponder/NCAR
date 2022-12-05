@@ -15,30 +15,24 @@ let leftHandP = null;
 let rightHandP = null;
 
 const helperText = {
-    raiseLeft: "Move left hand side to side to adjust eccentricity",
-    moveLeft: "Move your left hand to cover the Earth with more ice",
-    chooseOneHand: "Raise left or right hand to set summer equinox position",
+    eMoveHandTimed: "Move the Earth with left hand - how does it change the ice cover?",
+    oMoveHandTimed: "Adjust tilt angle - how does it change the ice cover?",
+    raiseHands: "Raise both hands to adjust angle",
+    chooseOneHand: "Point left or right hand to set summer equinox position",
     summerPeri: "Summer equinox is in Perihelion",
     summerApi: "Summer equinox is in Apihelion",
-    obliquity: "Raise both hands to tilt the Earth",
+    obliquity: "Raise/lower hands to tilt the Earth",
     pause: "Waiting for model to load...",
     eWin: "by changing eccentricity",
     pWin: "by putting the summer equinox in Apihelion",
     oWin: "by tilting the Earth to 22.1 degrees",
-    eTooHigh: "Too wide. Make the orbit less eccentric",
-    eTooLow: "Not wide enough. Make the orbit more eccentric",
-    oTooLow: "Tilted too far",
-    oTooHigh: "Not tilted enough",
-    eWinBottom: "Eccentricity set to ice age conditions",
-    pWinBottom: "Summer equinox set to ice age conditions",
-    oWinBottom: "Obliquity set to ice age conditions",
-    introScreen: `Why do ice ages happen? Changes in the Earth's orbit and positon over long periods of time are part of the cause.
-    
-    Your goal: cover the Earth with ice sheets by moving it into the Last Glacial Maximum
-    using your hands
-    
-    Raise both hands to start
-    `,
+    eTooHigh: "Now cause the ice age. Status: Too far",
+    eTooLow: "Now cause the ice age. Status: Not far enough",
+    oTooLow: "Now cause the ice age. Status: Too far",
+    oTooHigh: "Now cause the ice age. Status: Not far enough",
+    eWinBottom: "Eccentricity set to minimize ice melt",
+    pWinBottom: "Summer equinox set to minimize ice melt",
+    oWinBottom: "Obliquity set to minimize ice melt"
 }
 
 // booleans for tracking help image overlays
@@ -57,14 +51,11 @@ let allowProceed = false;
 /**
  *      TIMING / WIN CONTROLS
  */
-// how many ms to show overlay before allowing user interaction
-const overlayTimeLimit = 30 * 1000;
 
  // all win conditions will only start to check after 10 seconds on that cycle
 // const winTimerLimit = 1000; // just for dev COMMENT OUT THIS LINE AND UNCOMMENT ONE BELOW IT
 const winTimerLimit = 10 * 1000; // wait this amount of ms before user can win
 const winTransitionTimer = 5000; // ms time to show win message over canvas
-let startedWinTimer = false;
 let shouldCheckWin = false;
 let changedPageAfterWin = false;
 
@@ -81,12 +72,12 @@ let pWon = false; // switch if they win
 
 // oblquity angle must be += oWinRange from this oWin value to win
 let oWin = .25; // use let so that we change oWin to exact angle once user gets it
-const oWinRange = .05;
+const oWinRange = .02;
 let oWon = false; // switch if they win
 
 // these are so we can manually clear timeouts on page transitions
 let winTimeout = null;
-let overlayTimeout = null;
+let allowProceedTimeout = null;
 let winTransitionTimeout = null;
 
 
@@ -354,7 +345,7 @@ function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunction
         if (!startedTimer) {
             allowProceed = false;
             resetConditionsPageChange();
-            overlayTimeout = setTimeout(() => {
+            allowProceedTimeout = setTimeout(() => {
                 allowProceed = true; 
             }, 3000);
         }
@@ -380,13 +371,12 @@ function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunction
  */
 function resetConditionsPageChange() {
     // reset all of the win condition booleans
-    startedWinTimer = false;
     shouldCheckWin = false;
     changedPageAfterWin = false;
 
     clearTimeout(winTimeout);
     clearTimeout(winTransitionTimeout);
-    clearTimeout(overlayTimeout);
+    clearTimeout(allowProceedTimeout);
 
     renderHelperText("");
 }
@@ -411,8 +401,10 @@ function clearOverlay() {
             shownIOverlay = true;            
     }
 
-    clearTimeout(overlayTimeout);
+    clearTimeout(allowProceedTimeout);
     context.clearRect(0, 0, canvas.width, canvas.height);
+
+    startWinTimer();
 
     overlayPresent = false;
 }
@@ -457,10 +449,6 @@ function winTransition(text) {
  *      ECCENTRICITY 
  */
 function renderEccentricity(predictions) {
-    if (!startedWinTimer) {
-        startWinTimer();
-    }
-
     // if face detected, render sun there
     face = predictions.find(p => p.label == 'face')
     if (face && face.bbox) {
@@ -476,11 +464,7 @@ function renderEccentricity(predictions) {
     }
     
     if (!shouldCheckWin) {
-        if (leftHandE == null) {
-            renderHelperText(helperText.raiseLeft)
-        } else {
-            renderHelperText(helperText.moveLeft)
-        }
+        renderHelperText(helperText.eMoveHandTimed);
     }
 
     // clear out leftHand if it ends up moving past sun
@@ -709,12 +693,6 @@ function renderOrbitP(left, right) {
  * @param {Array} predictions 
  */
 function renderObliquity(predictions) {
-    if (!startedWinTimer) {
-        startWinTimer();
-    }
-
-    renderHelperText(helperText.obliquity)
-
     // find all hands
     hands = findHands(predictions)
     face = predictions.find(p => p.label == 'face')
@@ -751,6 +729,14 @@ function renderObliquity(predictions) {
                 oWon = true;
                 oWin = globalObliquityAngle;
                 renderHelperText(helperText.oWinBottom);
+            }
+        } else { // if user has only been on page for short amt: show helper text
+            if (hands.length < 2) {
+                // prompt to raise hands if 2 not found
+                renderHelperText(helperText.raiseHands);
+            } else {
+                // prompt to move & notice change
+                renderHelperText(helperText.oMoveHandTimed);
             }
         }
     }
