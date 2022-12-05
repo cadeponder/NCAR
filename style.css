@@ -6,7 +6,7 @@ h1 {
     font-weight: bolder;
 }
 p {
-    font-size: 24pt;
+    font-size: 18pt !important;
     font-weight: 600;
 }
 #helper-text {

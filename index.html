@@ -26,7 +26,7 @@
       </div>
         
       <div id="edMedia"><img id="img" src="img/lgm.jpg" alt=""></div>  
-      <div id="edText"><p>The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.</p></div>
+      <div id="edText"><p></p></div>
 
       <div id="interaction">
         <div class="main">
@@ -73,6 +73,7 @@
             textContent = "Ready to Embody an Ice Age?") {
               img.src = 'img/lgm.jpg';
               img.style.width = '100%';
+              edText.textContent = "The Last Glacial Maximum was the most recent time during the Last Glacial Period that ice sheets were at their greatest extent. Ice sheets covered much of Northern North America, Northern Europe, and Asia and profoundly affected Earth's climate.";
             }
            
 
@@ -115,6 +116,7 @@
             textContent == 'Obliquity'){
               header.textContent = "You did it!";
               img.src = 'gifs/final-animation.gif';
+              img.style.width = '100%';
               obProg.style.visibility = 'visible';
               interaction.style.visibility = 'hidden';
               feedback.style.visibility = 'hidden';
@@ -122,6 +124,8 @@
               edMedia.style.marginRight = '50%';
               edText.style.visibility = 'hidden';
               progress.style.visibility = 'hidden';
+              precProg.style.visibility = 'hidden';
+              obProg.style.visibility = 'hidden';
               allowRestart();
             }
            
