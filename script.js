@@ -42,6 +42,8 @@ const helperText = {
 }
 
 // booleans for tracking help image overlays
+let shownIOverlay = false; // intro overlay
+let startedITimer = false;
 let shownEOverlay = false;
 let startedETimer = false;
 let shownPOverlay = false;
@@ -100,18 +102,18 @@ const earthImageHeight = earthImageWidth * heightScale;
 const earthImage = new Image(earthImageWidth, earthImageHeight);
 earthImage.src = "earth_with_axis.png";
 
-const overlayImageWidth = 640 * .75;
-const overlayImageHeight = 480 * .75;
+const overlayImageWidth = 640 * .85;
+const overlayImageHeight = 480 * .85;
 const eOverlay = new Image(overlayImageWidth, overlayImageHeight);
 eOverlay.src = "img/eOverlay.png";
 
-const pOverlay = new Image(640, 480);
+const pOverlay = new Image(overlayImageWidth, overlayImageHeight);
 pOverlay.src = "img/pOverlay.png";
 
-const oOverlay = new Image(640, 480);
+const oOverlay = new Image(overlayImageWidth, overlayImageHeight);
 oOverlay.src = "img/oOverlay.png";
 
-const introOverlay = new Image(640, 480);
+const introOverlay = new Image(overlayImageWidth, overlayImageHeight);
 introOverlay.src = "img/introOverlay.png";
 
 const handSize = 100;
@@ -245,13 +247,8 @@ function runDetection() {
 
             // Intro page
             if (cycleParam == null) {
-                showText(helperText.introScreen);
-                // Proceed after raise hands
-                detectBothHands(predictions, () => {
-                    hideText();
-                    context.clearRect(0, 0, canvas.width, canvas.height);
-                    changePage();
-                });
+                callCycleFunction(shownIOverlay, introOverlay, startedITimer, () => {}, predictions);
+                startedITimer = true;
             }
 
             // Eccentricity
@@ -367,7 +364,14 @@ function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunction
 
     if (overlayPresent && allowProceed) {
         context.drawImage(handImage, canvas.width - handSize, canvas.height - handSize, handSize, handSize);
-        detectHandInCorner(predictions, clearOverlay);
+        if (cycleParam == null) { // intro case
+            detectHandInCorner(predictions, () => {
+                clearOverlay();
+                changePage();
+            });
+        } else {
+            detectHandInCorner(predictions, clearOverlay);
+        }
     }
 }
 
@@ -393,16 +397,18 @@ function resetConditionsPageChange() {
  * 
  */
 function clearOverlay() {
-    if (cycleParam == CycleParams.e) {
-        shownEOverlay = true;
-    }
-
-    if (cycleParam == CycleParams.p) {
-        shownPOverlay = true;
-    }
-
-    if (cycleParam == CycleParams.o) {
-        shownOOverlay = true;
+    switch (cycleParam) {
+        case CycleParams.e:
+            shownEOverlay = true;
+            break;
+        case CycleParams.p:
+            shownPOverlay = true;
+            break;
+        case CycleParams.o:
+            shownOOverlay = true;
+            break;
+        default:
+            shownIOverlay = true;            
     }
 
     clearTimeout(overlayTimeout);
@@ -582,10 +588,10 @@ function renderPerihelionInteraction(predictions) {
     
     if (hands.length > 0) {
         // left: look for hand with x coord less than sun x coord
-        leftHandP = hands.find(h => h.bbox && h.bbox[0] < sunX);
+        leftHandP = hands.find(h => h.bbox && h.bbox[0] < sunX && h.label == 'point');
 
         // right: look for hand with x coord greater than sun x coord
-        rightHandP = hands.find(h => h.bbox && h.bbox[0] > sunX);
+        rightHandP = hands.find(h => h.bbox && h.bbox[0] > sunX && h.label == 'point');
     }
     
     // instruct user to raise one hand 
