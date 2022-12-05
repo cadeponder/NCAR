@@ -347,7 +347,7 @@ function callCycleFunction(shownOverlay, overlayImg, startedTimer, cycleFunction
             resetConditionsPageChange();
             allowProceedTimeout = setTimeout(() => {
                 allowProceed = true; 
-            }, 3000);
+            }, 8000);
         }
     } else {
         cycleFunctionCallback(predictions);
